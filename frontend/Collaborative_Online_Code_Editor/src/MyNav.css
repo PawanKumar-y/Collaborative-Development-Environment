@@ -1,0 +1,22 @@
+.outer{
+    display:flex;
+    flex-direction:row;
+}
+
+.NavBar{
+    display:flex;
+    flex-direction:row;
+    justify-content:space-between;
+    align-items:center;
+}
+.features{
+    display:flex;
+}
+.Nav{
+    margin-right:20px;
+    margin-left:10px;
+    margin-top:10px;
+}
+.Auth{
+    display:flex;
+}
