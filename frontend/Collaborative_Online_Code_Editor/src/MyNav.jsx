@@ -1,5 +1,5 @@
-import './MyNav.css'
-function MyNav({setIsLogin})
+import './MyNav.css';
+function MyNav({setIsLogin,setIsSignUp})
 {
     return(
         <nav className="outer">
@@ -9,8 +9,8 @@ function MyNav({setIsLogin})
                 <div className="Nav">Interview Room</div>
             </div>
             <div className="Auth">
-                <div className="Nav" onClick={() => setIsLogin(true)} style={{ cursor: 'pointer' }}>Login</div>
-                <div className="Nav" onClick={() => setIsLogin(true)} style={{ cursor: 'pointer' }}>SignUp</div>
+                <div className="Nav" onClick={()=>(setIsLogin(true), setIsSignUp(false))} style={{ cursor: 'pointer' }}>Login</div>
+                <div className="Nav" onClick={()=>(setIsSignUp(true), setIsLogin(false))} style={{ cursor: 'pointer' }}>SignUp</div>
             </div>
         </nav>
     )
