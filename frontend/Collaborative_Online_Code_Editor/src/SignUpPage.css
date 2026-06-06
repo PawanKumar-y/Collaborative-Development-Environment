@@ -1,0 +1,46 @@
+.outerdiv
+{
+    display:flex;
+    gap:3rem;
+    flex-direction:column;
+    text-align:center;
+    justify-content:center;
+    margin-left: 5rem;
+    margin-right: 5rem;
+    margin-top: 3rem;
+}
+.signUpForm{
+    border: 2px solid white;
+    border-radius:50px;
+    width:fit-content;
+    margin:auto;
+    padding-left:5rem;
+    padding-top:2rem;
+    padding-bottom:2rem;
+    padding-right:5rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.inputTag
+{
+    text-align:center;
+    margin:1rem;
+    width:30rem;
+    height:2.5rem;
+    border: 1.5px solid rgb(169, 30, 255);
+    border-radius:4rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.signUpButton{
+    width:fit-content;
+    padding-left:1rem;
+    padding-right:1rem;
+    margin:1rem;
+    width:10rem;
+    height:2.5rem;
+    font-size: 1.0rem;
+    font-weight: 600;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color:rgb(68, 108, 255);
+    border:1.2px solid white;
+    border-radius:3rem;
+}

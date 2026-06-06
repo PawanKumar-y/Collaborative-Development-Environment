@@ -1,17 +1,22 @@
 import './App.css'
-import {useState} from 'react'
-import MyNav from './MyNav.jsx'
+import MyNav from './MyNav.jsx';
+import { Routes, Route } from 'react-router-dom';
 import LoginPage from './LoginPage.jsx'
 import SignUpPage from './SignUpPage.jsx'
 import LandingPage from './LandingPage.jsx';
 function App() {
 
-  const [isLogin,setIsLogin]=useState(false);
-  const [isSignUp,setIsSignUp]=useState(false);
   return ( 
     <div className="app-container">
-      <MyNav setIsLogin={setIsLogin} setIsSignUp={setIsSignUp}></MyNav>
-      { isLogin?<LoginPage/>:isSignUp?<SignUpPage/>:<LandingPage/> }
+      <MyNav ></MyNav>
+      <Routes>
+        <Route element={<LandingPage/>} path="/"/>
+        <Route element={<LoginPage/>} path="/login"/>
+        <Route element={<SignUpPage/>} path="/signup"/>
+        {/* <Route element={<InterviewRoom/>} path="/interview-room"/>
+        <Route element={<CreateRoom/>} path="/create-room"/>
+        <Route element={<ProgramPage/>} path="/execute"/> */}
+      </Routes>
     </div>
   )
 }

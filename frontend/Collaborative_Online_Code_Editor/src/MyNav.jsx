@@ -1,16 +1,18 @@
 import './MyNav.css';
-function MyNav({setIsLogin,setIsSignUp})
+import {Link} from 'react-router-dom'
+function MyNav()
 {
     return(
         <nav className="outer">
             <div className="features">
-                <div className="Nav">Execute Programs</div>
-                <div className="Nav">Create Room</div>
-                <div className="Nav">Interview Room</div>
+                <Link to="/" className="Nav">Home</Link>
+                <Link to="/execute" className="Nav">Execute Programs</Link>
+                <Link to="/create-room" className="Nav">Create Room</Link>
+                <Link to="/interview-room" className="Nav">Interview Room</Link>
             </div>
             <div className="Auth">
-                <div className="Nav" onClick={()=>(setIsLogin(true), setIsSignUp(false))} style={{ cursor: 'pointer' }}>Login</div>
-                <div className="Nav" onClick={()=>(setIsSignUp(true), setIsLogin(false))} style={{ cursor: 'pointer' }}>SignUp</div>
+                <Link to="/login" className="Nav">Log In</Link>
+                <Link to="/signup" className="Nav">Sign Up</Link>
             </div>
         </nav>
     )
