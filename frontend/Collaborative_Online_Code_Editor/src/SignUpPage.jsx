@@ -1,8 +1,42 @@
 import {useForm} from 'react-hook-form'
 import './SignUpPage.css'
+import {Link} from 'react-router-dom'
+import { FcGoogle } from "react-icons/fc";
+import { FaGithub } from "react-icons/fa";
+import { signInWithPopup } from "firebase/auth";
+import { auth, provider,githubProvider  } from "./firebase.js";
 function SignUpPage()
 {
-    const {register,handleSubmit,reset,formState:{errors}} = useForm();
+    const googleLogin=async()=>{
+        try
+        {
+            const result=await signInWithPopup(auth,provider);
+            console.log(result.user);
+            alert("Google Sign In successful. Welcome "+result.user.displayName);
+        }
+        catch(err)
+        {
+            console.log(err);
+            alert("Google Sign In failed. Please try again.");
+        }
+    }   
+    const githubLogin = async () => {
+        try
+        {
+            const result = await signInWithPopup(auth, githubProvider);
+
+            console.log(result.user);
+
+            alert("GitHub Login Successful");
+        }
+        catch(error)
+        {
+            console.log(error);
+        }
+    }
+    const {register,handleSubmit,reset,formState:{errors}} = useForm({
+        mode:"onChange"
+    });
     const afterSubmit=(data)=>{
         alert(JSON.stringify(data, null, 2));
         reset();
@@ -38,12 +72,28 @@ function SignUpPage()
                     <br></br>
                     
                     <input 
+                        type="number"
+                        placeholder="Enter your Phone Number"
+                        className="inputTag"
+                        {...register("phone",{
+                            required:"Phone number cannot be empty",
+                            pattern:{
+                                value: /^[0-9]{10}$/,
+                                message: "Phone number is not valid."
+                            }
+                        })}
+                        />
+                    {errors.phone && <p>{errors.phone.message}</p>}
+                    <br></br>
+                    
+                    <input 
                         type="password"
                         placeholder="Enter your Password"
                         className="inputTag"
                         {...register("password",{
                             required:"password cannot be empty",
                             validate:{
+                                checkLength:(value)=>(value.length>=8 || "Password must be at least 8 characters long."),
                                 checkUpper:(value)=>(/[A-Z]/.test(value) || "Password must contain an uppercase letter"),
                                 checkLower:(value)=>(/[a-z]/.test(value) || "Password must contain an lowercase letter"),
                                 checkDigit:(value)=>(/[0-9]/.test(value) || "Password must contain an digit.")
@@ -51,10 +101,25 @@ function SignUpPage()
                         })}
                         />
                     {errors.password && <p>{errors.password.message}</p>}
+
+                   
                     <br></br>
                     
                     <button className="signUpButton" type="submit" >Sign Up</button>
                 </form>
+                <hr style={{margin:"1.2rem"}}></hr>
+                <div className="socialLoginContainer">
+
+                    <button type="button" className="socialButton googleBtn" onClick={googleLogin}>
+                        <FcGoogle size={28}/>
+                    </button>
+
+                    <button type="button" className="socialButton githubBtn" onClick={githubLogin}>
+                        <FaGithub size={28}/>
+                    </button>
+
+                </div>
+                <p className="signuptext">Already have an account? <Link style={{color: 'white'}} to="/login">Log in</Link></p>
             </div>
 
         </div>

@@ -1,4 +1,5 @@
 import './LandingPage.css'
+import { Link } from 'react-router-dom'
 function LandingPage(){
     return(
         <div className="outerdiv"> 
@@ -9,7 +10,7 @@ function LandingPage(){
                 at the same time, anywhere in the world. Just share a meeting link and password - anyone can join and collaborate with you.
                 On top of this, we can use this platform to conduct online tests for interviews and one-on-one sessions.
                 <br /><br />
-                <strong>Wanna try? Please log in to your account first. If you're new, please sign up first.</strong>
+                <strong>Wanna try? Please log in to your account first. If you're new, please <Link style={{color: 'white'}} to='/signup'>sign up</Link> first.</strong>
             </p>
         </div>
     )
