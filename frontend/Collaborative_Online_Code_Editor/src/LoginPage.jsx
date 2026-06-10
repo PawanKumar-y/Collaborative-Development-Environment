@@ -65,7 +65,17 @@ function LoginPage()
             email: email,
             password: password
         }
-        alert("The following details is sent to the backend. "+data)
+        axios.post("http://localhost:5000/api/auth/login/basic",data)
+        .then((res)=>{
+            setAuth({
+                email:email,
+                token: res.data.token
+            });
+            alert(res.data.msg);
+        })
+        .catch((err)=>{
+            alert(err.response.data.msg);
+        })
     }
     return (
         <>

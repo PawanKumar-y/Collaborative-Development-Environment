@@ -1,5 +1,6 @@
 import {useForm} from 'react-hook-form'
 import './SignUpPage.css'
+import axios from 'axios'
 import {Link} from 'react-router-dom'
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
@@ -7,39 +8,40 @@ import { signInWithPopup } from "firebase/auth";
 import { auth, provider,githubProvider  } from "./firebase.js";
 function SignUpPage()
 {
-    const googleLogin=async()=>{
-        try
-        {
-            const result=await signInWithPopup(auth,provider);
-            console.log(result.user);
-            alert("Google Sign In successful. Welcome "+result.user.displayName);
+    const googleLogin = async()=>{
+        try{
+            const result = await signInWithPopup(auth,provider);
+            setValue("name",result.user.displayName);
+            setValue("email",result.user.email);
         }
-        catch(err)
-        {
+        catch(err){
             console.log(err);
-            alert("Google Sign In failed. Please try again.");
+            alert("Google Sign In failed.");
         }
-    }   
-    const githubLogin = async () => {
-        try
-        {
-            const result = await signInWithPopup(auth, githubProvider);
-
-            console.log(result.user);
-
-            alert("GitHub Login Successful");
+    } 
+    const githubLogin = async()=>{
+        try{
+            const result = await signInWithPopup(auth,githubProvider);
+            setValue("name",result.user.displayName);
+            setValue("email",result.user.email);
         }
         catch(error)
         {
             console.log(error);
+            alert("GitHub Sign In failed.");
         }
     }
-    const {register,handleSubmit,reset,formState:{errors}} = useForm({
-        mode:"onChange"
-    });
+    const {register,handleSubmit,setValue,reset,formState:{errors}} = useForm({mode:"onChange"});
     const afterSubmit=(data)=>{
-        alert(JSON.stringify(data, null, 2));
+        console.log(data);
         reset();
+        axios.post("http://localhost:5000/api/auth/signup",data)
+        .then((res)=>{
+            alert(res.data.msg);
+        })
+        .catch((err)=>{
+            alert(err.response.data.msg);
+        })
     }
     return (
         <div className="outerdiv">

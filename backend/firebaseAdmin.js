@@ -1,8 +1,12 @@
-import admin from "firebase-admin";
-import serviceAccount from "./serviceAccountKey.json" assert { type: "json" };
+const admin = require("firebase-admin/app");
+const { cert } = require("firebase-admin/app");
+
+const serviceAccount = require(
+   "./collaborative-online-editor-firebase-adminsdk-fbsvc-09abb8547a.json"
+);
 
 admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
+    credential: cert(serviceAccount)
 });
 
-export default admin;
+module.exports = admin;

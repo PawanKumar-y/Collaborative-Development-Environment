@@ -1,4 +1,5 @@
 const express =require('express')
+require('dotenv').config();
 const cors=require('cors')
 const connectDB=require('./dbconfig')
 const LogInSignUpRoutes=require('./Routes/LogInSignUpRoutes')

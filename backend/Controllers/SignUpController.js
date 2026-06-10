@@ -47,3 +47,4 @@ const SignUpController=async(req,res)=>{
         });
     }
 }
+module.exports=SignUpController;

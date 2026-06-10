@@ -31,7 +31,7 @@ const LoginController=async(req,res)=>{
             })
         }
         const token=jwt.sign(
-            {email:found.email},
+            {email:email},
             process.env.JWT_SECRET,
             {expiresIn:"1d"}
         )
@@ -43,6 +43,7 @@ const LoginController=async(req,res)=>{
     }
     catch(err)
     {
+        console.log(err);
         return res.status(500).json({
             status: "error",
             msg: "Internal Server Error"
