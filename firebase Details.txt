@@ -1,0 +1,21 @@
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBYlroh9fpcmhzcy0xCqKq1YJylXg1fYks",
+  authDomain: "collaborative-online-editor.firebaseapp.com",
+  projectId: "collaborative-online-editor",
+  storageBucket: "collaborative-online-editor.firebasestorage.app",
+  messagingSenderId: "819798560584",
+  appId: "1:819798560584:web:bda361b29e70b22b62ad7d",
+  measurementId: "G-K18H5WGQVT"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);

@@ -75,7 +75,7 @@ function SignUpPage()
                         type="number"
                         placeholder="Enter your Phone Number"
                         className="inputTag"
-                        {...register("phone",{
+                        {...register("phone_number",{
                             required:"Phone number cannot be empty",
                             pattern:{
                                 value: /^[0-9]{10}$/,
@@ -83,7 +83,7 @@ function SignUpPage()
                             }
                         })}
                         />
-                    {errors.phone && <p>{errors.phone.message}</p>}
+                    {errors.phone_number && <p>{errors.phone_number.message}</p>}
                     <br></br>
                     
                     <input 
