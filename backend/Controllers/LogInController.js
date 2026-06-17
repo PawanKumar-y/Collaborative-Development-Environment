@@ -19,7 +19,7 @@ const LoginController=async(req,res)=>{
         {
             return res.status(400).json({
                 status: "error",
-                msg: "Invalid email"
+                msg: "Invalid email or password"
             })
         }
         const isMatch=await bcrypt.compare(password,found.password)
@@ -27,7 +27,7 @@ const LoginController=async(req,res)=>{
         {
             return res.status(400).json({
                 status: "error",
-                msg: "Invalid password"
+                msg: "Invalid email or password"
             })
         }
         const token=jwt.sign(

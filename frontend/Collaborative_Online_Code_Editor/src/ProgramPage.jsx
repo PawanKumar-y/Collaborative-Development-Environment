@@ -10,7 +10,7 @@ function ProgramPage() {
     const [language, setLanguage] = useState("cpp");
     const [code, setCode] = useState("// Start typing your code here");
 
-    const isFirstOutput=useRef(null)
+    //const isFirstOutput=useRef(null)
     const terminalDivRef = useRef(null);  // the DOM div xterm mounts into
     const xtermRef = useRef(null);        // xterm Terminal instance
     const fitAddonRef = useRef(null);     // fitAddon instance
@@ -42,11 +42,11 @@ function ProgramPage() {
         socketRef.current = io("http://localhost:5000");
         //when backend sends output
         socketRef.current.on("output",(data)=>{
-            if(isFirstOutput.current)
-            {
-                xtermRef.current?.clear();
-                isFirstOutput.curent=false;
-            }
+            // if(isFirstOutput.current)
+            // {
+            //     xtermRef.current?.clear();
+            //     isFirstOutput.current=false;
+            // }
             xtermRef.current?.write(data);
         })
         socketRef.current.on("exit",(code)=>{
@@ -60,6 +60,7 @@ function ProgramPage() {
         })
         //  When user types in terminal → send to backend via WebSocket
         xtermRef.current.onData((data) => {
+            xtermRef.current?.write(data); 
             socketRef.current?.emit("input",data);
         });
 
@@ -78,7 +79,7 @@ function ProgramPage() {
         // Clear terminal and show status
         xtermRef.current.clear();
         xtermRef.current.writeln(`Running ${language} program...`);
-        isFirstOutput.current=true;
+        //isFirstOutput.current=true;
         // Send code to backend via socket io
         socketRef.current.emit("run",{
             language,

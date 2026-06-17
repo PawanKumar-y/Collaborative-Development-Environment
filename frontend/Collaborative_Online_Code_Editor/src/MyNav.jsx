@@ -7,7 +7,7 @@ function MyNav()
             <div className="features">
                 <Link to="/" className="Nav">Home</Link>
                 <Link to="/execute" className="Nav">Execute Programs</Link>
-                <Link to="/create-room" className="Nav">Create Room</Link>
+                <Link to="/create-room" className="Nav">Collaborative Code</Link>
                 <Link to="/interview-room" className="Nav">Interview Room</Link>
             </div>
             <div className="Auth">
