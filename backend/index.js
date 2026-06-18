@@ -7,6 +7,7 @@ const LogInSignUpRoutes = require('./Routes/LogInSignUpRoutes')
 const RoomRoutes = require('./Routes/RoomRoutes')
 const { Server } = require('socket.io')
 const SocketHandler = require('./Socket/SocketHandler.js')
+const setupYjsSocketHandlers=require('./Socket/YjsSocketHandler.js')
 
 const app = express()
 app.use(cors())
@@ -24,5 +25,6 @@ const io = new Server(server, {
         methods: ['GET', 'POST']
     }
 })
+setupYjsSocketHandlers(io)
 SocketHandler(io)
 server.listen(process.env.PORT || 5000, () => (console.log('Server is running on port 5000')))

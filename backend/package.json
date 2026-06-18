@@ -16,8 +16,10 @@
     "express": "^5.2.1",
     "firebase-admin": "^14.0.0",
     "jsonwebtoken": "^9.0.3",
+    "lib0": "^0.2.117",
     "mongoose": "^9.6.3",
     "socket.io": "^4.8.3",
-    "uuid": "^11.0.0"
+    "uuid": "^11.0.0",
+    "y-protocols": "^1.0.7"
   }
 }

@@ -6,6 +6,7 @@ import SignUpPage from './SignUpPage.jsx'
 import LandingPage from './LandingPage.jsx';
 import CollaborativeCode from './CollaborativeCode.jsx'
 import ProgramPage from './ProgramPage.jsx';
+import RoomEditor from './RoomEditor.jsx'
 function App() {
 
   return ( 
@@ -18,6 +19,7 @@ function App() {
         {/* <Route element={<InterviewRoom/>} path="/interview-room"/>*/}
         <Route element={<CollaborativeCode/>} path="/create-room"/>
         <Route element={<ProgramPage/>} path="/execute"/> 
+        <Route element={<RoomEditor/>} path="/room/:roomId"/>
       </Routes>
     </div>
   )

@@ -3,9 +3,13 @@ import { useParams } from 'react-router-dom'
 import axios from 'axios'
 import Editor from '@monaco-editor/react'
 import * as Y from 'yjs'
+import { Terminal } from '@xterm/xterm';
+import { FitAddon } from '@xterm/addon-fit';
+import '@xterm/xterm/css/xterm.css';
 import { SocketIOProvider } from 'y-socket.io'
 import { MonacoBinding } from 'y-monaco'
 import { AuthContext } from './context/AuthProvider.jsx'
+import {io} from 'socket.io-client'
 // import Terminal from './Terminal.jsx'
 
 const SERVER_URL = 'http://localhost:5000'
@@ -13,6 +17,8 @@ const SERVER_URL = 'http://localhost:5000'
 function RoomEditor() {
     const { roomId } = useParams()
     const { authState } = useContext(AuthContext)
+    const [language, setLanguage] = useState("cpp");
+    //const [code, setCode] = useState("// Start typing your code here");
 
     const [needsPassword, setNeedsPassword] = useState(false)
     const [passwordInput, setPasswordInput] = useState('')
@@ -23,6 +29,12 @@ function RoomEditor() {
     const [collaborators, setCollaborators] = useState([])
     const [saveStatus, setSaveStatus] = useState('saved')
 
+    const terminalDivRef=useRef(null);
+    const xtermRef=useRef(null);
+    const fitAddonRef=useRef(null);
+    const socketRef=useRef(null);
+
+    const editorRef = useRef(null)
     const ydocRef = useRef(null)
     const providerRef = useRef(null)
     const joinRoom = async (password) => {
@@ -40,7 +52,59 @@ function RoomEditor() {
             setLoading(false)
         }
     }
+    useEffect(()=>{
+        xtermRef.current=new Terminal({
+            cursorBlink:true,
+            fontSize:14,
+            fontFamily: "Menlo, Monaco, 'Courier New', monospace",
+            convertEol: true,
+            theme: {
+                background: "#1e1e1e",
+                foreground: "#d4d4d4",
+                cursor: "#d4d4d4",
+                selectionBackground: "#264f78",
+            },
+        });
+        const fitAddon=new FitAddon();
+        xtermRef.current.loadAddon(fitAddon)
+        xtermRef.current.open(terminalDivRef.current);
+        fitAddon.fit();
+        fitAddonRef.current=fitAddon;
+        const handleResize=()=>(fitAddon.fit())
+        window.addEventListener("resize",handleResize);
+        socketRef.current = io("http://localhost:5000");
+        //when backend sends output
+        socketRef.current.on("output",(data)=>{
+            // if(isFirstOutput.current)
+            // {
+            //     xtermRef.current?.clear();
+            //     isFirstOutput.current=false;
+            // }
+            xtermRef.current?.write(data);
+        })
+        socketRef.current.on("exit",(code)=>{
+            xtermRef.current?.writeln(`\r\nProcess exited with code ${code}`)
+        })
+        socketRef.current.on("connect",()=>{
+            xtermRef.current?.writeln("connected to server");
+        })
+        socketRef.current.on("disconnect",()=>{
+            xtermRef.current?.writeln("Disconnected from server")
+        })
+        //  When user types in terminal → send to backend via WebSocket
+        xtermRef.current.onData((data) => {
+            xtermRef.current?.write(data); 
+            socketRef.current?.emit("input",data);
+        });
 
+
+        // 10. Cleanup when component unmounts
+        return () => {
+            window.removeEventListener("resize", handleResize);
+            xtermRef.current.dispose();
+            socketRef.current.disconnect();
+        };
+    }, []);
     useEffect(() => {
         const checkAccess = async () => {
             try {
@@ -62,8 +126,6 @@ function RoomEditor() {
         checkAccess()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [roomId])
-
-    
 
     useEffect(() => {
         if (!joined) return
@@ -96,6 +158,7 @@ function RoomEditor() {
     }, [joined, roomId, authState.token])
 
     const handleEditorMount = (editor, monaco) => {
+        editorRef.current=editor
         const ydoc = ydocRef.current
         const provider = providerRef.current
         const ytext = ydoc.getText('monaco')
@@ -129,11 +192,42 @@ function RoomEditor() {
             </div>
         )
     }
+    const executeProgram = () => {
+        
+        if (!xtermRef.current || !socketRef.current) return;
+        // Clear terminal and show status
+        xtermRef.current.clear();
+        xtermRef.current.writeln(`Running ${language} program...`);
+        const code=editorRef.current.getValue();
+        //isFirstOutput.current=true;
+        // Send code to backend via socket io
+
+        socketRef.current.emit("run",{
+            language,
+            code,
+        });
+    };
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 1rem', borderBottom: '1px solid #ccc' }}>
                 <h3>{roomInfo?.room_name}</h3>
+                    <div className="panelHeader">
+                        <div>
+                            <h3>Editor</h3>
+                            <p>Select your language and start typing.</p>
+                        </div>
+                        <div className="toolbar">
+                            <label htmlFor="language-dropdown">Language</label>
+                            <select id="language-dropdown" value={language} onChange={(e) => setLanguage(e.target.value)}>
+                                <option value="cpp">C++</option>
+                                <option value="python">Python</option>
+                                <option value="c">C</option>
+                                <option value="java">Java</option>
+                            </select>
+                            <button className="execute" onClick={executeProgram}>Run Program</button>
+                        </div>
+                    </div>
                 <div>
                     {collaborators.map((c, i) => (
                         <span
@@ -158,7 +252,7 @@ function RoomEditor() {
                 </div>
                 <div style={{ flex: 1 }}>
                     {/* <Terminal roomId={roomId} /> */}
-                    <p style={{ padding: '1rem' }}>Plug your existing Terminal component in here.</p>
+                    <div ref={terminalDivRef} style={{ height: "100%", width: "100%" }} />
                 </div>
             </div>
         </div>
