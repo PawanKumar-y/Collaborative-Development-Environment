@@ -19,7 +19,8 @@ function LoginPage()
                 firebaseToken: token
             }).then((res)=>{
                 setAuth({
-                    email:result.user.email,
+                    email: result.user.email,
+                    user: { name: result.user.displayName },
                     token: res.data.token
                 });
                 alert(res.data.msg);
@@ -43,7 +44,8 @@ function LoginPage()
                 firebaseToken:token
             }).then((res)=>{
                 setAuth({
-                    email:result.user.email,
+                    email: result.user.email,
+                    user: { name: result.user.displayName },
                     token: res.data.token
                 });
                 alert(res.data.msg);
@@ -68,7 +70,8 @@ function LoginPage()
         axios.post("http://localhost:5000/api/auth/login/basic",data)
         .then((res)=>{
             setAuth({
-                email:email,
+                email: email,
+                user: { name: email.split('@')[0] },  // or get from backend
                 token: res.data.token
             });
             alert(res.data.msg);
