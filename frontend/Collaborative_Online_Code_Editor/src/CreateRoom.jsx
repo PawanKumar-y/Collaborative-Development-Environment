@@ -1,5 +1,5 @@
 import { useState, useContext } from 'react'
-import axios from 'axios'
+import api from './api/axiosInstance.js'
 import { useForm } from 'react-hook-form'
 import { AuthContext } from './context/AuthProvider.jsx'
 
@@ -11,8 +11,8 @@ function CreateRoom({ onRoomCreated }) {
 
     const onSubmit = async (data) => {
         try {
-            const response = await axios.post(
-                'http://localhost:5000/api/rooms/create',
+            const response = await api.post(
+                '/api/rooms/create',
                 {
                     room_name: data.room_name,
                     password: showPassword ? data.password : ''
@@ -35,45 +35,49 @@ function CreateRoom({ onRoomCreated }) {
     }
 
     return (
-        <div style={{ maxWidth: '500px', margin: '2rem auto' }}>
-            <h2>Create Room</h2>
+        <div className="form-panel">
+            <h2 className="app-heading">Create Room</h2>
             <form onSubmit={handleSubmit(onSubmit)}>
-                <div style={{ marginBottom: '1rem' }}>
-                    <label>Room Name</label>
+                <div className="form-row">
+                    <label className="app-label">Room Name</label>
                     <input
                         type="text"
                         {...register('room_name', { required: 'Room name is required' })}
-                        style={{ width: '100%', padding: '0.5rem' }}
+                        className="text-input"
                     />
-                    {errors.room_name && <p style={{ color: 'red' }}>{errors.room_name.message}</p>}
+                    {errors.room_name && <p className="error-text">{errors.room_name.message}</p>}
                 </div>
 
-                <div style={{ marginBottom: '1rem' }}>
-                    <label>
+                <div className="form-row checkbox-row">
+                    <label className="checkbox-label">
                         <input
                             type="checkbox"
                             checked={showPassword}
                             onChange={(e) => setShowPassword(e.target.checked)}
                         />
-                        {' '}Use password
+                        <span>Use password</span>
                     </label>
                 </div>
 
                 {showPassword && (
-                    <div style={{ marginBottom: '1rem' }}>
-                        <label>Password</label>
+                    <div className="form-row">
+                        <label className="app-label">Password</label>
                         <input
                             type="password"
                             {...register('password')}
-                            style={{ width: '100%', padding: '0.5rem' }}
+                            className="text-input"
                         />
                     </div>
                 )}
 
-                <button type="submit">Create Room</button>
+                <div className="button-row">
+                    <button className="app-button app-button--primary" type="submit">
+                        Create Room
+                    </button>
+                </div>
             </form>
 
-            {message && <p style={{ marginTop: '1rem', color: 'red' }}>{message}</p>}
+            {message && <p className="error-text" style={{ marginTop: '1rem' }}>{message}</p>}
         </div>
     )
 }

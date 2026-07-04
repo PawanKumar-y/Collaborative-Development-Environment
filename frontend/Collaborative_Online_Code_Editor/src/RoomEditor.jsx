@@ -1,26 +1,24 @@
 import { useContext, useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import axios from 'axios'
+import { useParams, useNavigate } from 'react-router-dom'
 import Editor from '@monaco-editor/react'
 import * as Y from 'yjs'
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
 import * as awarenessProtocol from 'y-protocols/awareness'
-import * as encoding from 'lib0/encoding'
 import * as decoding from 'lib0/decoding'
 import { MonacoBinding } from 'y-monaco'
 import { AuthContext } from './context/AuthProvider.jsx'
 import {io} from 'socket.io-client'
-// import Terminal from './Terminal.jsx'
+import api from './api/axiosInstance.js'
 
-const SERVER_URL = 'http://localhost:5000'
+const SERVER_URL = import.meta.env.VITE_API_URL
 
 function RoomEditor() {
     const { roomId } = useParams()
+    const navigate = useNavigate()
     const { authState } = useContext(AuthContext)
     const [language, setLanguage] = useState("cpp");
-    //const [code, setCode] = useState("// Start typing your code here");
 
     const [needsPassword, setNeedsPassword] = useState(false)
     const [passwordInput, setPasswordInput] = useState('')
@@ -31,6 +29,9 @@ function RoomEditor() {
     const [collaborators, setCollaborators] = useState([])
     const [saveStatus, setSaveStatus] = useState('saved')
 
+    const [showDetails, setShowDetails] = useState(false)
+    const [linkCopied, setLinkCopied] = useState(false)
+
     const terminalDivRef=useRef(null);
     const xtermRef=useRef(null);
     const fitAddonRef=useRef(null);
@@ -39,13 +40,22 @@ function RoomEditor() {
     const editorRef = useRef(null)
     const ydocRef = useRef(null)
     const providerRef = useRef(null)
+
+    const roomLink = `${window.location.origin}/room/${roomId}`
+
+    const handleLeaveRoom = () => {
+        navigate('/create-room')
+    }
+
+    const handleCopyLink = () => {
+        navigator.clipboard.writeText(roomLink)
+        setLinkCopied(true)
+        setTimeout(() => setLinkCopied(false), 2000)
+    }
+
     const joinRoom = async (password) => {
         try {
-            await axios.post(
-                `http://localhost:5000/api/rooms/joinroom/${roomId}`,
-                { password },
-                { headers: { Authorization: `Bearer ${authState.token}` } }
-            )
+            await api.post(`/api/rooms/joinroom/${roomId}`, { password })
             setJoined(true)
             setNeedsPassword(false)
             setLoading(false)
@@ -54,8 +64,8 @@ function RoomEditor() {
             setLoading(false)
         }
     }
+
     useEffect(() => {
-    // Only initialize terminal when the ref is attached to DOM
         if (!terminalDivRef.current || !authState?.token || !joined) return;
 
         xtermRef.current = new Terminal({
@@ -70,20 +80,20 @@ function RoomEditor() {
                 selectionBackground: "#264f78",
             },
         });
-        
+
         const fitAddon = new FitAddon();
         xtermRef.current.loadAddon(fitAddon);
-        xtermRef.current.open(terminalDivRef.current); // Now the element exists!
+        xtermRef.current.open(terminalDivRef.current);
         fitAddon.fit();
         fitAddonRef.current = fitAddon;
-        
+
         const handleResize = () => fitAddon.fit();
         window.addEventListener("resize", handleResize);
-        
-        socketRef.current = io("http://localhost:5000",{
+
+        socketRef.current = io(SERVER_URL, {
             auth: { token: authState?.token }
         });
-        
+
         socketRef.current.on("output", (data) => {
             xtermRef.current?.write(data);
         });
@@ -96,7 +106,14 @@ function RoomEditor() {
         socketRef.current.on("disconnect", () => {
             xtermRef.current?.writeln("Disconnected from server");
         });
-        
+        socketRef.current.on("connect_error", (err) => {
+            if (err.message === "Authentication failed" || err.message.includes("jwt")) {
+                localStorage.removeItem("token")
+                localStorage.removeItem("user")
+                window.location.href = "/login?expired=1"
+            }
+        })
+
         xtermRef.current.onData((data) => {
             xtermRef.current?.write(data);
             socketRef.current?.emit("input", data);
@@ -107,15 +124,13 @@ function RoomEditor() {
             xtermRef.current?.dispose();
             socketRef.current?.disconnect();
         };
-    }, [joined,authState?.token]); // Empty dependency array - runs once on mount
+    }, [joined, authState?.token]);
 
     useEffect(() => {
         if (!authState.token) return;
         const checkAccess = async () => {
             try {
-                const res = await axios.get(`http://localhost:5000/api/rooms/particular/${roomId}`, {
-                    headers: { Authorization: `Bearer ${authState.token}` }
-                })
+                const res = await api.get(`/api/rooms/particular/${roomId}`)
                 setRoomInfo(res.data)
                 if (res.data.already_member || !res.data.has_password) {
                     await joinRoom('')
@@ -130,37 +145,8 @@ function RoomEditor() {
         }
         checkAccess()
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [roomId,authState.token])
+    }, [roomId, authState.token])
 
-    // useEffect(() => {
-    //     if (!joined) return
-    //     if (!authState.token) return;
-    //     const ydoc = new Y.Doc()
-    //     ydocRef.current = ydoc
-
-    //     const provider = new SocketIOProvider(SERVER_URL, roomId, ydoc, {
-    //         auth: { token: authState.token }
-    //     })
-    //     providerRef.current = provider
-        
-    //     provider.awareness.setLocalStateField('user', {
-    //         name: authState.user?.name || 'Anonymous',
-    //         color: userColorRef.current
-    //     })
-
-    //     const updatePresence = () => {
-    //         const states = Array.from(provider.awareness.getStates().values())
-    //         setCollaborators(states.map((s) => s.user).filter(Boolean))
-    //     }
-    //     provider.awareness.on('change', updatePresence)
-    //     updatePresence()
-
-    //     return () => {
-    //         provider.awareness.off('change', updatePresence)
-    //         provider.disconnect()
-    //         ydoc.destroy()
-    //     }
-    // }, [joined, roomId, authState.user,authState.token])
     useEffect(() => {
         if (!joined || !authState.token) return
 
@@ -170,7 +156,6 @@ function RoomEditor() {
         const ySocket = io(SERVER_URL, { auth: { token: authState.token } })
         const awareness = new awarenessProtocol.Awareness(ydoc)
 
-        // Mark remote-applied updates so we don't echo them back
         const REMOTE_ORIGIN = 'remote'
 
         ySocket.on('connect', () => {
@@ -190,15 +175,21 @@ function RoomEditor() {
             Y.applyUpdate(ydoc, new Uint8Array(update), REMOTE_ORIGIN)
         })
 
-        // Send local doc changes to server
+        ySocket.on("connect_error", (err) => {
+            if (err.message === "Authentication failed" || err.message.includes("jwt")) {
+                localStorage.removeItem("token")
+                localStorage.removeItem("user")
+                window.location.href = "/login?expired=1"
+            }
+        })
+
         const onDocUpdate = (update, origin) => {
-            if (origin === REMOTE_ORIGIN) return // don't echo back what we just received
+            if (origin === REMOTE_ORIGIN) return
             console.log('[Yjs] sending local update')
             ySocket.emit('update', { room: roomId, update: Array.from(update) })
         }
         ydoc.on('update', onDocUpdate)
 
-        // Awareness (presence/cursors)
         awareness.setLocalStateField('user', {
             name: authState.user?.name || 'Anonymous',
             color: userColorRef.current
@@ -221,7 +212,6 @@ function RoomEditor() {
         awareness.on('change', updatePresence)
         updatePresence()
 
-        // expose for handleEditorMount
         providerRef.current = { awareness, socket: ySocket }
 
         return () => {
@@ -234,7 +224,7 @@ function RoomEditor() {
     }, [joined, roomId, authState.user, authState.token])
 
     const handleEditorMount = (editor, monaco) => {
-        editorRef.current=editor
+        editorRef.current = editor
         const ydoc = ydocRef.current
         const provider = providerRef.current
         const ytext = ydoc.getText('monaco')
@@ -268,66 +258,82 @@ function RoomEditor() {
             </div>
         )
     }
+
     const executeProgram = () => {
-        
         if (!xtermRef.current || !socketRef.current) return;
-        // Clear terminal and show status
         xtermRef.current.clear();
         xtermRef.current.writeln(`Running ${language} program...`);
-        const code=editorRef.current.getValue();
-        //isFirstOutput.current=true;
-        // Send code to backend via socket io
-
-        socketRef.current.emit("run",{
-            language,
-            code,
-        });
+        const code = editorRef.current.getValue();
+        socketRef.current.emit("run", { language, code });
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 1rem', borderBottom: '1px solid #ccc' }}>
+        <div className="room-editor-shell">
+            <div className="room-header">
                 <h3>{roomInfo?.room_name}</h3>
-                    <div className="panelHeader">
-                        <div>
-                            <h3>Editor</h3>
-                            <p>Select your language and start typing.</p>
-                        </div>
-                        <div className="toolbar">
-                            <label htmlFor="language-dropdown">Language</label>
-                            <select id="language-dropdown" value={language} onChange={(e) => setLanguage(e.target.value)}>
-                                <option value="cpp">C++</option>
-                                <option value="python">Python</option>
-                                <option value="c">C</option>
-                                <option value="java">Java</option>
-                            </select>
-                            <button className="execute" onClick={executeProgram}>Run Program</button>
-                        </div>
+                <div className="panelHeader">
+                    <div>
+                        <h3>Editor</h3>
+                        <p>Select your language and start typing.</p>
                     </div>
-                <div>
+                    <div className="toolbar">
+                        <label htmlFor="language-dropdown">Language</label>
+                        <select id="language-dropdown" value={language} onChange={(e) => setLanguage(e.target.value)}>
+                            <option value="cpp">C++</option>
+                            <option value="python">Python</option>
+                            <option value="c">C</option>
+                            <option value="java">Java</option>
+                        </select>
+                        <button className="app-button app-button--success" onClick={executeProgram}>Run Program</button>
+                        <button className="app-button app-button--info" onClick={() => setShowDetails(!showDetails)}>
+                            {showDetails ? 'Hide' : 'Room'} Details
+                        </button>
+                        <button className="app-button app-button--danger" onClick={handleLeaveRoom}>
+                            Leave Room
+                        </button>
+                    </div>
+                </div>
+                <div className="collaborator-list">
                     {collaborators.map((c, i) => (
                         <span
                             key={i}
                             title={c.name}
-                            style={{
-                                display: 'inline-block', background: c.color, borderRadius: '50%',
-                                width: '28px', height: '28px', textAlign: 'center', lineHeight: '28px',
-                                color: '#fff', marginLeft: '4px'
-                            }}
+                            className="collaborator-badge"
+                            style={{ background: c.color }}
                         >
                             {c.name?.charAt(0).toUpperCase()}
                         </span>
                     ))}
                 </div>
-                <span>{saveStatus === 'saved' ? 'Saved' : 'Unsaved changes'}</span>
+                <span className="save-status">{saveStatus === 'saved' ? 'Saved' : 'Unsaved changes'}</span>
             </div>
+
+            {showDetails && (
+                <div className="details-panel">
+                    <div className="details-row">
+                        <p><strong>Room Name:</strong> {roomInfo?.room_name}</p>
+                        <p><strong>Room ID:</strong> {roomId}</p>
+                    </div>
+                    <div className="details-row details-copy-row">
+                        <input type="text" value={roomLink} readOnly className="room-details-input" />
+                        <button className="app-button app-button--secondary" onClick={handleCopyLink}>
+                            {linkCopied ? 'Copied!' : 'Copy Link'}
+                        </button>
+                    </div>
+                    <p className="details-heading"><strong>Currently in room ({collaborators.length}):</strong></p>
+                    <ul className="collaborator-names">
+                        {collaborators.map((c, i) => (
+                            <li key={i} style={{ color: c.color }}>{c.name}</li>
+                        ))}
+                    </ul>
+                </div>
+            )}
 
             <div style={{ display: 'flex', flex: 1 }}>
                 <div style={{ flex: 2, borderRight: '1px solid #ccc' }}>
                     <Editor height="100%" defaultLanguage="cpp" onMount={handleEditorMount} theme="vs-dark" />
                 </div>
                 <div style={{ flex: 1 }}>
-                    {/* <Terminal roomId={roomId} /> */}
                     <div ref={terminalDivRef} style={{ height: "100%", width: "100%" }} />
                 </div>
             </div>

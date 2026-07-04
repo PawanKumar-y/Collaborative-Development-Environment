@@ -1,8 +1,8 @@
 import { useContext, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import axios from 'axios'
 import { AuthContext } from './context/AuthProvider.jsx'
 import CreateRoom from './CreateRoom.jsx'
+import api from './api/axiosInstance.js'
 
 function CollaborativeCode() {
     const { authState } = useContext(AuthContext)
@@ -19,6 +19,9 @@ function CollaborativeCode() {
     const [loadingRooms, setLoadingRooms] = useState(false)
     const [joinError, setJoinError] = useState('')
 
+    const [linkInput, setLinkInput] = useState('')
+    const [linkError, setLinkError] = useState('')
+
     if (!authState?.token) {
         return <p>Please <Link to="/login">Log In</Link> first</p>
     }
@@ -27,8 +30,8 @@ function CollaborativeCode() {
         setLoadingRooms(true)
         setJoinError('')
         try {
-            const response = await axios.get(
-                'http://localhost:5000/api/rooms/mine',
+            const response = await api.get(
+                '/api/rooms/mine',
                 { headers: { Authorization: `Bearer ${authState.token}` } }
             )
             setMyRooms(response.data)
@@ -49,24 +52,49 @@ function CollaborativeCode() {
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
     }
+    const handleJoinByLink = () => {
+        setLinkError('')
+        const trimmed = linkInput.trim()
+        if (!trimmed) return
 
+        // extract room id whether they pasted a full URL or just the bare id
+        let roomId = trimmed
+        try {
+            if (trimmed.startsWith('http')) {
+                const url = new URL(trimmed)
+                const parts = url.pathname.split('/').filter(Boolean) // ['room', 'abc123']
+                roomId = parts[1] || ''
+            }
+        } catch {
+            setLinkError('That link looks invalid')
+            return
+        }
+
+        if (!roomId) {
+            setLinkError('Could not find a room ID in that link')
+            return
+        }
+        navigate(`/room/${roomId}`)
+    }
     // ---- MENU VIEW ----
     if (view === 'menu') {
         return (
-            <div style={{ maxWidth: '500px', margin: '2rem auto', textAlign: 'center' }}>
-                <h2>Collaborative Coding</h2>
-                <button onClick={() => setView('create')} style={{ margin: '0.5rem' }}>
-                    Create Room
-                </button>
-                <button
-                    onClick={() => {
-                        setView('join')
-                        fetchMyRooms()
-                    }}
-                    style={{ margin: '0.5rem' }}
-                >
-                    Join Existing Room
-                </button>
+            <div className="app-card app-page-panel">
+                <h2 className="app-heading">Collaborative Coding</h2>
+                <div className="button-row">
+                    <button className="app-button app-button--success" onClick={() => setView('create')}>
+                        Create Room
+                    </button>
+                    <button
+                        className="app-button app-button--info"
+                        onClick={() => {
+                            setView('join')
+                            fetchMyRooms()
+                        }}
+                    >
+                        Join Existing Room
+                    </button>
+                </div>
             </div>
         )
     }
@@ -75,8 +103,10 @@ function CollaborativeCode() {
     if (view === 'create') {
         if (!createdRoom) {
             return (
-                <div style={{ maxWidth: '500px', margin: '2rem auto' }}>
-                    <button onClick={() => setView('menu')}>&larr; Back</button>
+                <div className="app-card app-page-panel">
+                    <button className="app-button app-button--ghost" onClick={() => setView('menu')}>
+                        &larr; Back
+                    </button>
                     <CreateRoom onRoomCreated={(roomData) => setCreatedRoom(roomData)} />
                 </div>
             )
@@ -85,38 +115,40 @@ function CollaborativeCode() {
         const roomLink = `${window.location.origin}/room/${createdRoom.room_id}`
 
         return (
-            <div style={{ maxWidth: '600px', margin: '2rem auto' }}>
-                <h2>Room Created: {createdRoom.room_name}</h2>
+            <div className="app-card app-page-panel">
+                <h2 className="app-heading">Room Created: {createdRoom.room_name}</h2>
 
-                <div style={{ marginBottom: '1rem' }}>
-                    <label>Shareable Link</label>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <input type="text" value={roomLink} readOnly style={{ flex: 1, padding: '0.5rem' }} />
-                        <button onClick={() => handleCopy(createdRoom.room_id)}>
+                <div className="form-row">
+                    <label className="app-label">Shareable Link</label>
+                    <div className="copy-row">
+                        <input type="text" value={roomLink} readOnly className="text-input" />
+                        <button className="app-button app-button--secondary" onClick={() => handleCopy(createdRoom.room_id)}>
                             {copied ? 'Copied!' : 'Copy'}
                         </button>
                     </div>
                 </div>
 
                 {createdRoom.password && (
-                    <div style={{ marginBottom: '1rem' }}>
-                        <label>Password</label>
+                    <div className="form-row">
+                        <label className="app-label">Password</label>
                         <p>{createdRoom.password}</p>
                     </div>
                 )}
 
-                <button onClick={() => navigate(`/room/${createdRoom.room_id}`)}>
-                    Enter Room
-                </button>
-                <button onClick={() => setRoomDetails(!roomDetails)}>
-                    {roomDetails ? 'Hide' : 'See'} Room Details
-                </button>
-                <button onClick={() => { setCreatedRoom(null); setView('menu') }}>
-                    Back to Menu
-                </button>
+                <div className="button-row">
+                    <button className="app-button app-button--primary" onClick={() => navigate(`/room/${createdRoom.room_id}`)}>
+                        Enter Room
+                    </button>
+                    <button className="app-button app-button--secondary" onClick={() => setRoomDetails(!roomDetails)}>
+                        {roomDetails ? 'Hide' : 'See'} Room Details
+                    </button>
+                    <button className="app-button app-button--ghost" onClick={() => { setCreatedRoom(null); setView('menu') }}>
+                        Back to Menu
+                    </button>
+                </div>
 
                 {roomDetails && (
-                    <div>
+                    <div className="room-details">
                         <p><strong>Room ID:</strong> {createdRoom.room_id}</p>
                         <p><strong>Creator:</strong> {createdRoom.creator_id}</p>
                     </div>
@@ -128,33 +160,46 @@ function CollaborativeCode() {
     // ---- JOIN VIEW ----
     if (view === 'join') {
         return (
-            <div style={{ maxWidth: '600px', margin: '2rem auto' }}>
-                <button onClick={() => setView('menu')}>&larr; Back</button>
-                <h2>Your Rooms</h2>
+            <div className="app-card app-page-panel">
+                <button className="app-button app-button--ghost" onClick={() => setView('menu')}>
+                    &larr; Back
+                </button>
+                <h2 className="app-heading">Your Rooms</h2>
 
                 {loadingRooms && <p>Loading rooms...</p>}
-                {joinError && <p style={{ color: 'red' }}>{joinError}</p>}
+                {joinError && <p className="error-text">{joinError}</p>}
 
                 {!loadingRooms && myRooms.length === 0 && !joinError && (
                     <p>You haven't created or joined any rooms yet.</p>
                 )}
-
-                <ul style={{ listStyle: 'none', padding: 0 }}>
+                <div className="form-row">
+                    <label className="app-label">Have a room link or code?</label>
+                    <div className="copy-row">
+                        <input
+                            type="text"
+                            className="text-input"
+                            placeholder="Paste room link or ID"
+                            value={linkInput}
+                            onChange={(e) => setLinkInput(e.target.value)}
+                        />
+                        <button className="app-button app-button--primary" onClick={handleJoinByLink}>
+                            Join
+                        </button>
+                    </div>
+                    {linkError && <p className="error-text">{linkError}</p>}
+                </div>
+                <hr style={{ margin: '1rem 0' }} />
+                <p className="app-label">Or join your previous rooms:</p>
+                <ul className="room-list">
                     {myRooms.map((room) => (
                         <li
                             key={room.room_id}
                             onClick={() => handleSelectRoom(room.room_id)}
-                            style={{
-                                padding: '0.75rem',
-                                marginBottom: '0.5rem',
-                                border: '1px solid #ccc',
-                                borderRadius: '4px',
-                                cursor: 'pointer'
-                            }}
+                            className="room-list-item"
                         >
                             <strong>{room.room_name}</strong>
                             {room.last_modified && (
-                                <span style={{ marginLeft: '1rem', color: '#666' }}>
+                                <span className="room-date">
                                     Last modified: {new Date(room.last_modified).toLocaleString()}
                                 </span>
                             )}

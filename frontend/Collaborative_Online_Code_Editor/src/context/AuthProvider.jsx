@@ -4,7 +4,7 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [authState, setAuthState] = useState({ token: null, email: null, user: null });
-
+    const [authLoading, setAuthLoading] = useState(true)
     // Load auth from localStorage once on mount
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -18,6 +18,7 @@ export const AuthProvider = ({ children }) => {
                 user: user ? JSON.parse(user) : null
             });
         }
+        setAuthLoading(false);
     }, []); // Empty dependency - runs only once
 
     // Custom setAuth that also saves to localStorage
@@ -35,12 +36,14 @@ export const AuthProvider = ({ children }) => {
         }
         setAuthState(newAuth);
     };
-
+    const logout = () => {
+        setAuth({ token: null, email: null, user: null });
+    };
     return (
-        <AuthContext.Provider value={{ authState, setAuth }}>
+        <AuthContext.Provider value={{ authState, setAuth, logout, authLoading }}>
             {children}
         </AuthContext.Provider>
-    );
+    )
 };
 
 export { AuthContext };

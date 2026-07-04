@@ -1,21 +1,24 @@
 import {useState,useContext} from 'react'
 import {AuthContext} from './context/AuthProvider.jsx'
 import './LoginPage.css'
-import axios from 'axios'
-import {Link} from 'react-router-dom'
+import api from './api/axiosInstance.js'
+import {Link,useSearchParams} from 'react-router-dom'
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider,githubProvider  } from "./firebase.js";
+
 function LoginPage()
 {
     const {authState, setAuth}=useContext(AuthContext);
+    const [searchParams] = useSearchParams()
+    const expired = searchParams.get('expired')
     const googleLogin=async()=>{
         try
         {
             const result=await signInWithPopup(auth,provider);
             const token=await result.user.getIdToken()
-            axios.post("http://localhost:5000/api/auth/login/firebase", {
+            api.post("/api/auth/login/firebase", {
                 firebaseToken: token
             }).then((res)=>{
                 setAuth({
@@ -40,7 +43,7 @@ function LoginPage()
         {
             const result = await signInWithPopup(auth, githubProvider);
             const token = await result.user.getIdToken();
-            axios.post("http://localhost:5000/api/auth/login/firebase",{
+            api.post("/api/auth/login/firebase",{
                 firebaseToken:token
             }).then((res)=>{
                 setAuth({
@@ -67,7 +70,7 @@ function LoginPage()
             email: email,
             password: password
         }
-        axios.post("http://localhost:5000/api/auth/login/basic",data)
+        api.post("/api/auth/login/basic",data)
         .then((res)=>{
             setAuth({
                 email: email,
@@ -82,6 +85,11 @@ function LoginPage()
     }
     return (
         <>
+            {expired && (
+                <p style={{ color: '#b91c1c', background: '#fee2e2', padding: '0.75rem', borderRadius: '6px' }}>
+                    Your session has expired. Please log in again.
+                </p>
+            )}
             {authState && authState.token ? (
                 <div className="outerdiv">
                     <h2>Welcome {authState.email}!</h2>

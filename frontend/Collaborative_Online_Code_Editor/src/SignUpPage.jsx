@@ -1,6 +1,6 @@
 import {useForm} from 'react-hook-form'
 import './SignUpPage.css'
-import axios from 'axios'
+import api from './api/axiosInstance.js'
 import {Link} from 'react-router-dom'
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
@@ -35,7 +35,7 @@ function SignUpPage()
     const afterSubmit=(data)=>{
         console.log(data);
         reset();
-        axios.post("http://localhost:5000/api/auth/signup",data)
+        api.post("/api/auth/signup",data)
         .then((res)=>{
             alert(res.data.msg);
         })
