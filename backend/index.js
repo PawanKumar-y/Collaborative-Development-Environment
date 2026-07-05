@@ -5,6 +5,7 @@ const http = require('http')
 const connectDB = require('./dbconfig')
 const LogInSignUpRoutes = require('./Routes/LogInSignUpRoutes')
 const RoomRoutes = require('./Routes/RoomRoutes')
+const InterviewRoutes = require('./Routes/InterviewRoutes')
 const { Server } = require('socket.io')
 const SocketHandler = require('./Socket/SocketHandler.js')
 const setupYjsSocketHandlers=require('./Socket/YjsSocketHandler.js')
@@ -17,6 +18,7 @@ connectDB()
 
 app.use('/api/auth', LogInSignUpRoutes)
 app.use('/api/rooms', RoomRoutes)
+app.use('/api/interview', InterviewRoutes)
 
 const server = http.createServer(app)
 const io = new Server(server, {

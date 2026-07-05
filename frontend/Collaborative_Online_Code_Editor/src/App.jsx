@@ -7,7 +7,11 @@ import LandingPage from './LandingPage.jsx';
 import CollaborativeCode from './CollaborativeCode.jsx'
 import ProtectedRoute from './ProtectedRoute.jsx'
 import ProgramPage from './ProgramPage.jsx';
-import RoomEditor from './RoomEditor.jsx'
+import RoomEditor from './RoomEditor.jsx';
+import InterviewRoom from './InterviewRoom.jsx';
+import JoinInterviewRoom from './JoinInterviewRoom.jsx';
+
+
 function App() {
 
   return ( 
@@ -17,10 +21,11 @@ function App() {
         <Route element={<LandingPage/>} path="/"/>
         <Route element={<LoginPage/>} path="/login"/>
         <Route element={<SignUpPage/>} path="/signup"/>
-        {/* <Route element={<InterviewRoom/>} path="/interview-room"/>*/}
-        <Route path="/execute" element={<ProgramPage />} />
+        <Route path="/execute" element={<ProtectedRoute><ProgramPage /></ProtectedRoute>} />
         <Route path="/create-room" element={<ProtectedRoute><CollaborativeCode /></ProtectedRoute>} />
         <Route path="/room/:roomId" element={<ProtectedRoute><RoomEditor /></ProtectedRoute>} />
+        <Route path="/interview-room" element={<ProtectedRoute><InterviewRoom /></ProtectedRoute>} />
+        <Route path="/interview-room/:roomId" element={<ProtectedRoute><JoinInterviewRoom /></ProtectedRoute>} />
       </Routes>
     </div>
   )
