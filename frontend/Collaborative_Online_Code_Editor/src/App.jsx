@@ -9,7 +9,7 @@ import ProtectedRoute from './ProtectedRoute.jsx'
 import ProgramPage from './ProgramPage.jsx';
 import RoomEditor from './RoomEditor.jsx';
 import InterviewRoom from './InterviewRoom.jsx';
-import JoinInterviewRoom from './JoinInterviewRoom.jsx';
+import InterviewRoomWorkspace from './InterviewRoomWorkspace.jsx';
 
 
 function App() {
@@ -25,7 +25,7 @@ function App() {
         <Route path="/create-room" element={<ProtectedRoute><CollaborativeCode /></ProtectedRoute>} />
         <Route path="/room/:roomId" element={<ProtectedRoute><RoomEditor /></ProtectedRoute>} />
         <Route path="/interview-room" element={<ProtectedRoute><InterviewRoom /></ProtectedRoute>} />
-        <Route path="/interview-room/:roomId" element={<ProtectedRoute><JoinInterviewRoom /></ProtectedRoute>} />
+        <Route path="/interview-room/:roomId" element={<ProtectedRoute><InterviewRoomWorkspace /></ProtectedRoute>} />
       </Routes>
     </div>
   )

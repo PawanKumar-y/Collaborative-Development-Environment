@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from './api/axiosInstance.js'
 
@@ -10,13 +10,20 @@ function JoinInterviewRoom() {
     const [linkInput, setLinkInput] = useState('')
     const [linkError, setLinkError] = useState('')
 
-    useState(() => {
+    useEffect(() => {
         const fetchRooms = async () => {
             try {
                 const res = await api.get('/api/interview/mine')
-                setMyRooms(res.data)
+                // Backend responds with { rooms: [...] }
+                const rooms = res.data?.rooms ?? res.data
+                setMyRooms(Array.isArray(rooms) ? rooms : [])
             } catch (err) {
-                setError(err.response?.data?.msg || 'Unable to load rooms')
+                // Treat 404 as "no rooms" rather than an error
+                if (err.response?.status === 404) {
+                    setMyRooms([])
+                } else {
+                    setError(err.response?.data?.msg || 'Unable to load rooms')
+                }
             } finally {
                 setLoading(false)
             }
@@ -76,9 +83,9 @@ function JoinInterviewRoom() {
             <ul className="room-list">
                 {myRooms.map((room) => (
                     <li
-                        key={room.room_id}
+                        key={room._id}
                         className="room-list-item"
-                        onClick={() => navigate(`/interview-room/${room.room_id}`)}
+                        onClick={() => navigate(`/interview-room/${room._id}`)}
                     >
                         <strong>{room.room_name}</strong>
                     </li>

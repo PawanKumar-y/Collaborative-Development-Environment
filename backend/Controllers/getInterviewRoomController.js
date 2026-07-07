@@ -1,13 +1,15 @@
+const InterviewRoom = require('../Collections/interviewRoomCollection')
+
 const getInterviewRoomController = async (req, res) => {
     try {
         const { roomId } = req.params
-        const found = await InterviewRoom.findById({_id:roomId})
+        const found = await InterviewRoom.findById(roomId)
 
         if (!found) {
             return res.status(404).json({ msg: "Interview room not found." })
         }
 
-        const isCreator = found.creator_id.toString() === req.user.id
+        const isCreator = found.creator_id === req.user.email
 
         const sanitizedQuestions = found.questions.map(q => ({
             _id: q._id,
@@ -29,6 +31,7 @@ const getInterviewRoomController = async (req, res) => {
             }
         })
     } catch (err) {
+        console.log(err)
         return res.status(500).json({ msg: "Internal Server Error." })
     }
 }

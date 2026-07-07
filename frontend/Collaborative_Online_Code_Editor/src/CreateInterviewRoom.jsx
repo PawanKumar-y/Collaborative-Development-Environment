@@ -56,12 +56,14 @@ function CreateInterviewRoom() {
 
         setCreating(true)
         try {
+            const willFinishAt = new Date(Date.now() + Number(duration) * 60 * 1000).toISOString()
             const res = await api.post('/api/interview/create', {
                 room_name: roomName,
                 duration_minutes: Number(duration),
-                questions
+                questions,
+                willFinishAt
             })
-            setCreatedRoom(res.data)
+            setCreatedRoom(res.data.room)
         } catch (err) {
             setError(err.response?.data?.msg || 'Failed to create room')
         } finally {
@@ -70,7 +72,7 @@ function CreateInterviewRoom() {
     }
 
     if (createdRoom) {
-        const roomLink = `${window.location.origin}/interview-room/${createdRoom.room_id}`
+        const roomLink = `${window.location.origin}/interview-room/${createdRoom._id}`
         return (
             <div className="app-card app-page-panel">
                 <h2 className="app-heading">Room Created: {createdRoom.room_name}</h2>
@@ -80,7 +82,7 @@ function CreateInterviewRoom() {
                         Copy Link
                     </button>
                 </div>
-                <button className="app-button app-button--primary" onClick={() => navigate(`/interview-room/${createdRoom.room_id}`)}>
+                <button className="app-button app-button--primary" onClick={() => navigate(`/interview-room/${createdRoom._id}`)}>
                     Enter Room
                 </button>
             </div>
