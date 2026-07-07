@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useCallback } from 'react';
 
 const AuthContext = createContext();
 
@@ -22,23 +22,25 @@ export const AuthProvider = ({ children }) => {
     }, []); // Empty dependency - runs only once
 
     // Custom setAuth that also saves to localStorage
-    const setAuth = (newAuth) => {
-        if (newAuth?.token) {
-            localStorage.setItem('token', newAuth.token);
-            localStorage.setItem('email', newAuth.email);
-            if (newAuth.user) {
-                localStorage.setItem('user', JSON.stringify(newAuth.user));
+
+        const setAuth = useCallback((newAuth) => {
+            if (newAuth?.token) {
+                localStorage.setItem('token', newAuth.token);
+                localStorage.setItem('email', newAuth.email);
+                if (newAuth.user) {
+                    localStorage.setItem('user', JSON.stringify(newAuth.user));
+                }
+            } else {
+                localStorage.removeItem('token');
+                localStorage.removeItem('email');
+                localStorage.removeItem('user');
             }
-        } else {
-            localStorage.removeItem('token');
-            localStorage.removeItem('email');
-            localStorage.removeItem('user');
-        }
-        setAuthState(newAuth);
-    };
-    const logout = () => {
+            setAuthState(newAuth);
+        }, []);
+
+    const logout = useCallback(() => {
         setAuth({ token: null, email: null, user: null });
-    };
+    }, [setAuth]);
     return (
         <AuthContext.Provider value={{ authState, setAuth, logout, authLoading }}>
             {children}

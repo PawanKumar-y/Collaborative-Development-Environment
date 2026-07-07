@@ -22,6 +22,7 @@ const sendInterviewRoomListController = async (req, res) => {
         return res.status(200).json({rooms:rooms});
     }
     catch(err){
+        console.error(err);
         return res.status(500).json({msg:"Internal Server Error."})
     }
 }

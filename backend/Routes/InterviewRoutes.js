@@ -8,10 +8,12 @@ const createInterviewRoomController=require('../Controllers/createInterviewRoomC
 const runCodeController=require('../Controllers/runCodeController')
 const checkRoomResults=require('../Controllers/checkRoomResultsController')
 const adminRoomResultsController=require('../Controllers/adminRoomResultsController')
+const runSampleController=require('../Controllers/runSampleController')
 
 route.get('/details/:roomId',verifyJWT,getInterviewRoomController)
 route.get('/mine',verifyJWT,sendInterviewRoomListController)
 route.post('/create',verifyJWT,createInterviewRoomController)
+route.post('/run-sample/:roomId', verifyJWT, runSampleController)
 route.post('/run/:roomId',verifyJWT,runCodeController)
 route.get('/getDetails/:roomId',verifyJWT,checkRoomResults)
 route.get('/getAllResults/:roomId',verifyJWT,adminRoomResultsController)

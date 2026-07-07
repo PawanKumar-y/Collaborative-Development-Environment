@@ -131,35 +131,44 @@ function CreateInterviewRoom() {
                         />
                     </div>
 
-                    <h4>Test Cases</h4>
+                    <h4 >Test Cases</h4>
                     {q.testCases.map((tc, tcIndex) => (
-                        <div key={tcIndex} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}>
-                            <input
-                                placeholder="Input"
-                                className="text-input"
-                                value={tc.input}
-                                onChange={(e) => updateTestCase(qIndex, tcIndex, 'input', e.target.value)}
-                            />
-                            <input
-                                placeholder="Expected Output"
-                                className="text-input"
-                                value={tc.expectedOutput}
-                                onChange={(e) => updateTestCase(qIndex, tcIndex, 'expectedOutput', e.target.value)}
-                            />
-                            <label style={{ whiteSpace: 'nowrap' }}>
+                        <div key={tcIndex} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto auto', gap: '0.75rem', marginBottom: '1rem', alignItems: 'end', padding: '0.75rem', backgroundColor: '#f5f5f5', borderRadius: '6px' }}>
+                            <div>
+                                <label style={{ fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem', fontWeight: '500', color: '#333' }}>Input</label>
+                                <input
+                                    placeholder="Enter input"
+                                    className="text-input"
+                                    value={tc.input}
+                                    onChange={(e) => updateTestCase(qIndex, tcIndex, 'input', e.target.value)}
+                                    style={{ width: '100%', color: '#000', backgroundColor: '#fff' }}
+                                />
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem', fontWeight: '500', color: '#333' }}>Expected Output</label>
+                                <input
+                                    placeholder="Enter expected output"
+                                    className="text-input"
+                                    value={tc.expectedOutput}
+                                    onChange={(e) => updateTestCase(qIndex, tcIndex, 'expectedOutput', e.target.value)}
+                                    style={{ width: '100%', color: '#000', backgroundColor: '#fff' }}
+                                />
+                            </div>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap', cursor: 'pointer', color: '#333' }}>
                                 <input
                                     type="checkbox"
                                     checked={tc.isSample}
                                     onChange={(e) => updateTestCase(qIndex, tcIndex, 'isSample', e.target.checked)}
+                                    style={{ cursor: 'pointer' }}
                                 />
-                                Sample
+                                <span>Sample</span>
                             </label>
                             {q.testCases.length > 1 && (
-                                <button type="button" onClick={() => removeTestCase(qIndex, tcIndex)}>Remove test case</button>
+                                <button type="button" onClick={() => removeTestCase(qIndex, tcIndex)} style={{ padding: '0.5rem 1rem', backgroundColor: '#ff6b6b', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem' }}>Remove</button>
                             )}
                         </div>
                     ))}
-                    <button type="button" onClick={() => addTestCase(qIndex)}> Add Test Case</button>
+                    <button type="button" onClick={() => addTestCase(qIndex)} style={{ marginTop: '0.5rem', padding: '0.5rem 1rem', backgroundColor: '#4ecdc4', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>+ Add Test Case</button>
                 </div>
             ))}
 

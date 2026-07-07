@@ -12,7 +12,7 @@ import { AuthContext } from './context/AuthProvider.jsx'
 import {io} from 'socket.io-client'
 import api from './api/axiosInstance.js'
 
-const SERVER_URL = import.meta.env.VITE_API_URL
+const SERVER_URL = import.meta.env.VITE_SOCKET_URL
 
 function RoomEditor() {
     const { roomId } = useParams()
