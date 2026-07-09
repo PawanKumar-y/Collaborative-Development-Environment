@@ -79,7 +79,7 @@ function CollaborativeCode() {
     // ---- MENU VIEW ----
     if (view === 'menu') {
         return (
-            <div className="app-card app-page-panel">
+            <div className="app-card app-page-panel" style={{ width: 'min(100%, 760px)' }}>
                 <h2 className="app-heading">Collaborative Coding</h2>
                 <div className="button-row">
                     <button className="app-button app-button--success" onClick={() => setView('create')}>
@@ -103,7 +103,7 @@ function CollaborativeCode() {
     if (view === 'create') {
         if (!createdRoom) {
             return (
-                <div className="app-card app-page-panel">
+                <div className="app-card app-page-panel" style={{ width: 'min(100%, 760px)' }}>
                     <button className="app-button app-button--ghost" onClick={() => setView('menu')}>
                         &larr; Back
                     </button>
@@ -115,7 +115,7 @@ function CollaborativeCode() {
         const roomLink = `${window.location.origin}/room/${createdRoom.room_id}`
 
         return (
-            <div className="app-card app-page-panel">
+            <div className="app-card app-page-panel" style={{ width: 'min(100%, 760px)' }}>
                 <h2 className="app-heading">Room Created: {createdRoom.room_name}</h2>
 
                 <div className="form-row">
@@ -160,7 +160,7 @@ function CollaborativeCode() {
     // ---- JOIN VIEW ----
     if (view === 'join') {
         return (
-            <div className="app-card app-page-panel">
+            <div className="app-card app-page-panel" style={{ width: 'min(100%, 760px)' }}>
                 <button className="app-button app-button--ghost" onClick={() => setView('menu')}>
                     &larr; Back
                 </button>

@@ -111,8 +111,8 @@ function InterviewRoomWorkspace() {
 )
 
     return (
-        <div style={{ display: 'flex', height: '90vh' }}>
-            <div style={{ width: '40%', overflowY: 'auto', padding: '1.5rem', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', minHeight: '90vh' }}>
+            <div style={{ flex: '1 1 360px', width: '40%', minWidth: '320px', overflowY: 'auto', padding: '1.5rem', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
                 {problem.questions.length > 1 && (
                     <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                         {problem.questions.map((q, i) => (
@@ -175,7 +175,7 @@ function InterviewRoomWorkspace() {
                 )}
             </div>
 
-            <div style={{ width: '60%', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: '1 1 420px', width: '60%', minWidth: '320px', display: 'flex', flexDirection: 'column' }}>
                 <div className="editor-toolbar" style={{ display: 'flex', gap: '1rem', padding: '1rem', backgroundColor: '#2d2d2d', borderBottom: '1px solid #444', alignItems: 'center' }}>
                     <select value={language} onChange={(e) => setLanguage(e.target.value)} style={{ padding: '0.6rem 0.75rem', borderRadius: '4px', border: '1px solid #555', backgroundColor: '#3d3d3d', color: '#fff', fontSize: '0.95rem', fontWeight: '500', cursor: 'pointer' }}>
                         <option value="cpp">C++</option>

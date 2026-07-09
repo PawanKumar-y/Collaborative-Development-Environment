@@ -10,14 +10,19 @@ function ProgramPage() {
     const [language, setLanguage] = useState("cpp");
     const [code, setCode] = useState("// Start typing your code here");
 
-    //const isFirstOutput=useRef(null)
-    const terminalDivRef = useRef(null);  // the DOM div xterm mounts into
-    const xtermRef = useRef(null);        // xterm Terminal instance
-    const fitAddonRef = useRef(null);     // fitAddon instance
-    const socketRef = useRef(null);           // WebSocket instance
+    const terminalDivRef = useRef(null);
+    const xtermRef = useRef(null);
+    const fitAddonRef = useRef(null);
+    const socketRef = useRef(null);
+
+    const fitTerminal = () => {
+        if (fitAddonRef.current) {
+            fitAddonRef.current.fit();
+            requestAnimationFrame(() => fitAddonRef.current?.fit());
+        }
+    };
 
     useEffect(() => {
-        // 1. Create the terminal object with all config
         xtermRef.current = new Terminal({
             cursorBlink: true,
             fontSize: 14,
@@ -33,11 +38,17 @@ function ProgramPage() {
         const fitAddon = new FitAddon();
         xtermRef.current.loadAddon(fitAddon);
         xtermRef.current.open(terminalDivRef.current);
-        fitAddon.fit();
         fitAddonRef.current = fitAddon;
+        fitTerminal();
         xtermRef.current.writeln("Welcome to C.O.D.E terminal.\nRun a program to see output.");
-        const handleResize = () => fitAddon.fit();
+
+        const handleResize = () => fitTerminal();
         window.addEventListener("resize", handleResize);
+
+        const resizeObserver = new ResizeObserver(() => fitTerminal());
+        if (terminalDivRef.current) {
+            resizeObserver.observe(terminalDivRef.current);
+        }
 
         socketRef.current = io("http://localhost:5000");
         //when backend sends output
@@ -68,8 +79,9 @@ function ProgramPage() {
         // 10. Cleanup when component unmounts
         return () => {
             window.removeEventListener("resize", handleResize);
-            xtermRef.current.dispose();
-            socketRef.current.disconnect();
+            resizeObserver.disconnect();
+            xtermRef.current?.dispose();
+            socketRef.current?.disconnect();
         };
     }, []);
 
@@ -121,6 +133,7 @@ function ProgramPage() {
                             value={code}
                             onChange={(val) => setCode(val)}
                             theme="vs-dark"
+                            options={{ automaticLayout: true }}
                         />
                     </div>
                 </section>
@@ -132,7 +145,7 @@ function ProgramPage() {
                         </div>
                     </div>
                     <div className="outputContent">
-                        <div ref={terminalDivRef} style={{ height: "100%", width: "100%" }} />
+                        <div ref={terminalDivRef} style={{ height: "100%", width: "100%", minHeight: "260px" }} />
                     </div>
                 </aside>
             </div>

@@ -2,22 +2,29 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
 }
 
 h1 {
   font-weight: 700;
   color: #fff;
-  font-size: 4.0rem;
+  font-size: clamp(2.3rem, 5vw, 4rem);
   margin-bottom: 1.5rem;
+  line-height: 1.1;
 }
 
 p {
   font-weight: 500;
   color: #f0f0f0;
-  font-size: 1.3rem;
-  letter-spacing:0.09rem;
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  letter-spacing: 0.03em;
+  line-height: 1.6;
 }
 
-
-
-
+@media (max-width: 700px) {
+  .app-container {
+    padding: 0 0.5rem;
+  }
+}

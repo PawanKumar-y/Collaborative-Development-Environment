@@ -1,14 +1,15 @@
 const { spawn } = require('child_process');
 
-function runInDocker({ image, cmd, tempDir, input = '', timeoutMs = 10000 }) {
+function runInDocker({ image,  cmd,  tempDir,  input = '',  timeoutMs = 10000,  memory = '100m',  pidsLimit = 64,
+}) {
   return new Promise((resolve) => {
     const dockerArgs = [
       'run', '--rm', '-i',
       '--network', 'none',
-      '--memory', '100m',
+      '--memory', memory,
       '--cpus', '0.5',
       '--ulimit', 'cpu=10',
-      '--pids-limit', '64',
+      '--pids-limit', String(pidsLimit),
       '-v', `${tempDir}:/box`,
       '-w', '/box',
       image,

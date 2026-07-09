@@ -1,8 +1,14 @@
+// const dockerImages = {
+//   python: 'python:3.11',
+//   cpp: 'gcc:latest',
+//   c: 'gcc:latest',
+//   java: 'eclipse-temurin:17',
+// };
 const dockerImages = {
-  python: 'python:3.11',
-  cpp: 'gcc:latest',
-  c: 'gcc:latest',
-  java: 'eclipse-temurin:17',
+  python: 'python:3.11-slim',
+  cpp: 'gcc-slim:13',
+  c: 'gcc-slim:13',
+  java: 'eclipse-temurin:17-jdk-alpine',
 };
 
 const languageConfig = {
@@ -29,6 +35,8 @@ const languageConfig = {
     filename: 'Main.java',
     compileCmd: ['javac', 'Main.java'],
     runCmd: ['java', 'Main'],
+    memory: '256m',
+    pidsLimit: 128,
   },
 };
 

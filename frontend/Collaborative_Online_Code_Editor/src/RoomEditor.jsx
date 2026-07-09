@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Editor from '@monaco-editor/react'
 import * as Y from 'yjs'
@@ -13,6 +13,7 @@ import {io} from 'socket.io-client'
 import api from './api/axiosInstance.js'
 
 const SERVER_URL = import.meta.env.VITE_SOCKET_URL
+const INITIAL_USER_COLOR = '#' + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0')
 
 function RoomEditor() {
     const { roomId } = useParams()
@@ -36,10 +37,11 @@ function RoomEditor() {
     const xtermRef=useRef(null);
     const fitAddonRef=useRef(null);
     const socketRef=useRef(null);
-    const userColorRef = useRef('#' + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0'))
+    const userColorRef = useRef(INITIAL_USER_COLOR)
     const editorRef = useRef(null)
     const ydocRef = useRef(null)
     const providerRef = useRef(null)
+    const bindingRef = useRef(null)
 
     const roomLink = `${window.location.origin}/room/${roomId}`
 
@@ -84,11 +86,20 @@ function RoomEditor() {
         const fitAddon = new FitAddon();
         xtermRef.current.loadAddon(fitAddon);
         xtermRef.current.open(terminalDivRef.current);
-        fitAddon.fit();
         fitAddonRef.current = fitAddon;
 
-        const handleResize = () => fitAddon.fit();
+        const fitTerminal = () => {
+            fitAddon.fit();
+            requestAnimationFrame(() => fitAddon.fit());
+        };
+
+        fitTerminal();
+
+        const handleResize = () => fitTerminal();
         window.addEventListener("resize", handleResize);
+
+        const resizeObserver = new ResizeObserver(() => fitTerminal());
+        resizeObserver.observe(terminalDivRef.current);
 
         socketRef.current = io(SERVER_URL, {
             auth: { token: authState?.token }
@@ -121,6 +132,7 @@ function RoomEditor() {
 
         return () => {
             window.removeEventListener("resize", handleResize);
+            resizeObserver.disconnect();
             xtermRef.current?.dispose();
             socketRef.current?.disconnect();
         };
@@ -223,21 +235,39 @@ function RoomEditor() {
         }
     }, [joined, roomId, authState.user, authState.token])
 
-    const handleEditorMount = (editor, monaco) => {
-        editorRef.current = editor
+    const attachEditorBinding = useCallback((editor, monacoInstance) => {
+        if (!editor || bindingRef.current || !ydocRef.current || !providerRef.current) return
+
         const ydoc = ydocRef.current
         const provider = providerRef.current
         const ytext = ydoc.getText('monaco')
 
-        new MonacoBinding(ytext, editor.getModel(), new Set([editor]), provider.awareness)
+        bindingRef.current = new MonacoBinding(ytext, editor.getModel(), new Set([editor]), provider.awareness)
 
         editor.onDidChangeModelContent(() => setSaveStatus('unsaved'))
 
-        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-            provider.socket.emit('save-room', { roomId })
-            setSaveStatus('saved')
+        if (monacoInstance) {
+            editor.addCommand(monacoInstance.KeyMod.CtrlCmd | monacoInstance.KeyCode.KeyS, () => {
+                provider.socket.emit('save-room', { roomId })
+                setSaveStatus('saved')
+            })
+        }
+    }, [roomId])
+
+    const handleEditorMount = (editor, monacoInstance) => {
+        editorRef.current = editor
+        editor.layout()
+        requestAnimationFrame(() => {
+            editor.layout()
+            editor.focus()
         })
+        attachEditorBinding(editor, monacoInstance)
     }
+
+    useEffect(() => {
+        if (!editorRef.current || !ydocRef.current || !providerRef.current) return
+        attachEditorBinding(editorRef.current, null)
+    }, [attachEditorBinding, joined, roomId, authState.token])
 
     if (loading) return <p>Loading room...</p>
     if (error) return <p style={{ color: 'red' }}>{error}</p>
@@ -271,28 +301,33 @@ function RoomEditor() {
         <div className="room-editor-shell">
             <div className="room-header">
                 <h3>{roomInfo?.room_name}</h3>
+                
+                <div className="header-controls">
+                    <button className="app-button app-button--success" onClick={executeProgram}>Run</button>
+                    <button className="app-button app-button--info" onClick={() => setShowDetails(!showDetails)}>
+                        Details
+                    </button>
+                    <button className="app-button app-button--danger" onClick={handleLeaveRoom}>
+                        Leave
+                    </button>
+                </div>
+
                 <div className="panelHeader">
-                    <div>
-                        <h3>Editor</h3>
-                        <p>Select your language and start typing.</p>
+                    <div className="panelHeader-info">
+                        <h3>Code Editor</h3>
+                        <p>Write and run code collaboratively</p>
                     </div>
-                    <div className="toolbar">
-                        <label htmlFor="language-dropdown">Language</label>
+                    <div className="header-toolbar">
+                        <label htmlFor="language-dropdown">Language:</label>
                         <select id="language-dropdown" value={language} onChange={(e) => setLanguage(e.target.value)}>
                             <option value="cpp">C++</option>
                             <option value="python">Python</option>
                             <option value="c">C</option>
                             <option value="java">Java</option>
                         </select>
-                        <button className="app-button app-button--success" onClick={executeProgram}>Run Program</button>
-                        <button className="app-button app-button--info" onClick={() => setShowDetails(!showDetails)}>
-                            {showDetails ? 'Hide' : 'Room'} Details
-                        </button>
-                        <button className="app-button app-button--danger" onClick={handleLeaveRoom}>
-                            Leave Room
-                        </button>
                     </div>
                 </div>
+
                 <div className="collaborator-list">
                     {collaborators.map((c, i) => (
                         <span
@@ -304,8 +339,8 @@ function RoomEditor() {
                             {c.name?.charAt(0).toUpperCase()}
                         </span>
                     ))}
+                    <span className="save-status">{saveStatus === 'saved' ? '✓ Saved' : '⏺ Unsaved'}</span>
                 </div>
-                <span className="save-status">{saveStatus === 'saved' ? 'Saved' : 'Unsaved changes'}</span>
             </div>
 
             {showDetails && (
@@ -329,12 +364,33 @@ function RoomEditor() {
                 </div>
             )}
 
-            <div style={{ display: 'flex', flex: 1 }}>
-                <div style={{ flex: 2, borderRight: '1px solid #ccc' }}>
-                    <Editor height="100%" defaultLanguage="cpp" onMount={handleEditorMount} theme="vs-dark" />
+            <div className="workspace-panels">
+                <div className="workspace-pane editor-pane">
+                    <div className="pane-title">Editor</div>
+                    <div className="editor-surface">
+                        <Editor
+                            height="100%"
+                            width="100%"
+                            language={language}
+                            defaultLanguage="cpp"
+                            defaultValue=""
+                            onMount={handleEditorMount}
+                            theme="vs-dark"
+                            options={{
+                                automaticLayout: true,
+                                fontSize: 14,
+                                lineNumbers: 'on',
+                                minimap: { enabled: true },
+                                scrollBeyondLastLine: false,
+                                wordWrap: 'on',
+                                padding: { top: 12, bottom: 12 }
+                            }}
+                        />
+                    </div>
                 </div>
-                <div style={{ flex: 1 }}>
-                    <div ref={terminalDivRef} style={{ height: "100%", width: "100%" }} />
+                <div className="workspace-pane terminal-pane">
+                    <div className="pane-title">Terminal</div>
+                    <div ref={terminalDivRef} className="terminal-surface" />
                 </div>
             </div>
         </div>

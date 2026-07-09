@@ -1,59 +1,100 @@
-const { spawn } = require('child_process')
-
-const dockerImages = {
-    cpp: "gcc:latest",
-    python: "python:3.11",
-    c: "gcc:latest",
-    java: "eclipse-temurin:17",
-};
-
-const getRunCommand = (language, code) => {
-    const escaped = code.replace(/'/g, `'\\''`);
-    switch (language) {
-        case "python":
-            return `echo '${escaped}' | python3`;
-        case "cpp":
-            return `echo '${escaped}' > main.cpp && g++ main.cpp -o main && ./main`;
-        case "c":
-            return `echo '${escaped}' > main.c && gcc main.c -o main && ./main`;
-        case "java":
-            return `echo '${escaped}' > Main.java && javac Main.java && java Main`;
-        default:
-            return `echo 'Unsupported language'`;
-    }
-};
+const { spawn } = require('child_process');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const crypto = require('crypto');
+const { languageConfig } = require('../CodeRunner/languageConfig');
 
 const socketHandler = (io) => {
     io.on("connection", (socket) => {
         console.log("Client connected:", socket.id);
 
         let dockerProcess = null;
+        let currentTempDir = null;
 
-        socket.on("run", ({ language, code }) => {
+        const cleanupTempDir = () => {
+            if (currentTempDir) {
+                fs.rmSync(currentTempDir, { recursive: true, force: true });
+                currentTempDir = null;
+            }
+        };
+
+        socket.on("run", async ({ language, code }) => {
             if (dockerProcess) {
                 dockerProcess.kill();
                 dockerProcess = null;
             }
+            cleanupTempDir();
 
-            const image = dockerImages[language];
-            const command = getRunCommand(language, code);
+            const config = languageConfig[language];
+            if (!config) {
+                socket.emit("output", `\r\nUnsupported language: ${language}`);
+                socket.emit("exit", 1);
+                return;
+            }
+
+            const tempDir = path.join(os.tmpdir(), `interactive-${crypto.randomUUID()}`);
+            fs.mkdirSync(tempDir, { recursive: true });
+            currentTempDir = tempDir;
+
+            fs.writeFileSync(path.join(tempDir, config.filename), code, 'utf-8');
+
+            // Compile first if needed (cpp/c/java)
+            if (config.compileCmd) {
+                const compileOk = await new Promise((resolve) => {
+                    const compileProc = spawn("docker", [
+                        "run", "--rm",
+                        "--network", "none",
+                        "--memory", config.memory || "100m",
+                        "--cpus", "0.5",
+                        "--pids-limit", String(config.pidsLimit || 64),
+                        "-v", `${tempDir}:/box`,
+                        "-w", "/box",
+                        config.image,
+                        ...config.compileCmd,
+                    ]);
+
+                    let stderr = '';
+                    compileProc.stderr.on("data", (d) => (stderr += d.toString()));
+                    compileProc.on("close", (exitCode) => {
+                        if (exitCode !== 0) {
+                            socket.emit("output", `\r\nCompilation Error:\r\n${stderr}`);
+                            socket.emit("exit", exitCode);
+                        }
+                        resolve(exitCode === 0);
+                    });
+                    compileProc.on("error", (err) => {
+                        socket.emit("output", `\r\nDocker error: ${err.message}`);
+                        resolve(false);
+                    });
+                });
+
+                if (!compileOk) {
+                    cleanupTempDir();
+                    return;
+                }
+            }
 
             dockerProcess = spawn("docker", [
                 "run", "--rm", "-i",
-                "--memory", "100m",       // max 100MB RAM
-                "--cpus", "0.5",          // max 50% of one CPU core
-                "--ulimit", "cpu=10",     // kill if uses more than 10 seconds of CPU
-                image,
-                "sh", "-c", command
+                "--network", "none",
+                "--memory", config.memory || "100m",
+                "--cpus", "0.5",
+                "--ulimit", "cpu=10",
+                "--pids-limit", String(config.pidsLimit || 64),
+                "-v", `${tempDir}:/box`,
+                "-w", "/box",
+                config.image,
+                ...config.runCmd,
             ]);
-            
+
             const timeout = setTimeout(() => {
                 if (dockerProcess) {
-                    dockerProcess.kill();
+                    dockerProcess.kill('SIGKILL');
                     socket.emit("output", "\r\nProcess timed out after 10 seconds.");
                 }
             }, 10000);
-            
+
             dockerProcess.stdout.on("data", (data) => {
                 socket.emit("output", data.toString());
             });
@@ -62,10 +103,18 @@ const socketHandler = (io) => {
                 socket.emit("output", data.toString());
             });
 
-            dockerProcess.on("close", (code) => {
-                clearTimeout(timeout)
-                socket.emit("exit", code);
+            dockerProcess.on("close", (exitCode) => {
+                clearTimeout(timeout);
+                socket.emit("exit", exitCode);
                 dockerProcess = null;
+                cleanupTempDir();
+            });
+
+            dockerProcess.on("error", (err) => {
+                clearTimeout(timeout);
+                socket.emit("output", `\r\nDocker error: ${err.message}`);
+                dockerProcess = null;
+                cleanupTempDir();
             });
         });
 
@@ -77,44 +126,10 @@ const socketHandler = (io) => {
 
         socket.on("disconnect", () => {
             console.log("Client disconnected:", socket.id);
-            if (dockerProcess) dockerProcess.kill();
+            if (dockerProcess) dockerProcess.kill('SIGKILL');
+            cleanupTempDir();
         });
     });
 };
 
 module.exports = socketHandler;
-
-/*
-io.on("connection") 
-    - Fires once when a user opens the page/connects to the server
-    - Gives us a socket object unique to that user
-    - Everything inside here belongs to that one specific user
-
-let dockerProcess = null
-    - Each user gets their own dockerProcess variable
-    - Starts as null because no program is running yet
-
-socket.on("run")
-    this is program execution 
-    it has three possible outcomes 
-    valid output stdout
-    error stderr
-    execution done so thats why three emit statements are there 
-    - Fires every time the user clicks the Run button
-    - if(dockerProcess) → if a program is already running, kill it first
-    - Then spawn() starts a new Docker container and assigns it to dockerProcess
-    - dockerProcess.stdout → streams program output back to the user's terminal
-    - dockerProcess.stderr → streams compilation/runtime errors back to the user's terminal
-    - dockerProcess.on("close") → when program finishes, notify frontend and reset dockerProcess to null
-
-socket.on("input")
-    this is to get runtime input from the client
-    - Fires every time the user types in the xterm terminal
-    - Writes the keystroke directly into the running Docker container's stdin
-    - This is what makes cin, input(), Scanner work
-
-socket.on("disconnect")
-    once the disconnect is clicked when particular page dismounts socket connection closes
-    - Fires once when the user closes the tab or navigates away
-    - Kills the Docker container if it's still running
-    - Prevents containers running forever and wasting server resources*/

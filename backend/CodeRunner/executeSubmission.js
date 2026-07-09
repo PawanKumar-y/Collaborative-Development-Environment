@@ -26,6 +26,8 @@ async function executeSubmission(language, sourceCode, testCases) {
         cmd: config.compileCmd,
         tempDir,
         timeoutMs: 15000,
+        memory: config.memory,
+        pidsLimit: config.pidsLimit,
       });
 
       if (compileResult.exitCode !== 0 || compileResult.timedOut) {
@@ -50,6 +52,8 @@ async function executeSubmission(language, sourceCode, testCases) {
         tempDir,
         input: tc.input,
         timeoutMs: 10000,
+        memory: config.memory,
+        pidsLimit: config.pidsLimit,
       });
 
       let status;
