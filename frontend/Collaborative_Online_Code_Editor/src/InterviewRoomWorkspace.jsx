@@ -6,6 +6,7 @@ import api from './api/axiosInstance.js'
 function InterviewRoomWorkspace() {
     const { roomId } = useParams()
     const navigate = useNavigate()
+    const [submitCount, setSubmitCount] = useState(0)
     const [problem, setProblem] = useState(null)
     const [activeQuestionIndex, setActiveQuestionIndex] = useState(0)
     const [loading, setLoading] = useState(true)
@@ -40,6 +41,7 @@ function InterviewRoomWorkspace() {
     const handleRun = async () => {
         setRunning(true)
         setRunResults(null)
+        setSubmitResults(null)
         try {
             const res = await api.post(`/api/interview/run-sample/${roomId}`, {
                 sourceCode: code,
@@ -57,6 +59,7 @@ function InterviewRoomWorkspace() {
     const handleSubmit = async () => {
         setSubmitting(true)
         setSubmitResults(null)
+        setRunResults(null)
         try {
             const res = await api.post(`/api/interview/run/${roomId}`, {
                 sourceCode: code,
@@ -64,18 +67,18 @@ function InterviewRoomWorkspace() {
                 questionId: currentQuestion._id
             })
             setSubmitResults(res.data)
+            setSubmitCount(prev => prev + 1)
         } catch (err) {
             console.error(err)
         } finally {
             setSubmitting(false)
         }
     }
+
     const handleFinish = () => {
-        if(submitResults===null)
-        {
+        if (submitCount === 0) {
             alert('Please submit your solution before clicking Finish Test.')
-        }
-        else {
+        } else {
             navigate('/interview-room')
         }
     }

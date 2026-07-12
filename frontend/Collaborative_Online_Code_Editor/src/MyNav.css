@@ -10,6 +10,12 @@
     align-items:center;
 }
 
+.Nav--disabled {
+    opacity: 0.4;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
 .features,
 .Auth{
     display:flex;
