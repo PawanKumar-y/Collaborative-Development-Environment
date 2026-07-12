@@ -1,4 +1,4 @@
-const { executeSubmission } = require('../codeRunner/executeSubmission')
+const { executeSubmission } = require('../CodeRunner/executeSubmission')
 const InterviewRoom = require('../Collections/interviewRoomCollection')
 const Submission = require('../Collections/submissionCollection')
 
