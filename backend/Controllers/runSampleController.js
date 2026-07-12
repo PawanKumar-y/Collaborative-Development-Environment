@@ -1,5 +1,5 @@
 const InterviewRoom = require('../Collections/interviewRoomCollection')
-const { executeSubmission } = require('../codeRunner/executeSubmission')
+const { executeSubmission } = require('../CodeRunner/executeSubmission')
 
 const runSampleController = async (req, res) => {
     try {
