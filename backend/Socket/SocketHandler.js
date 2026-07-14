@@ -11,7 +11,16 @@ const socketHandler = (io) => {
 
         let dockerProcess = null;
         let currentTempDir = null;
-
+        let timeout;
+        const resetTimeout=()=>{
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                if (dockerProcess) {
+                    dockerProcess.kill('SIGKILL');
+                    socket.emit("output", "\r\nProcess timed out after 10 seconds.");
+            }
+            }, 10000);
+        }
         const cleanupTempDir = () => {
             if (currentTempDir) {
                 fs.rmSync(currentTempDir, { recursive: true, force: true });
@@ -87,13 +96,8 @@ const socketHandler = (io) => {
                 config.image,
                 ...config.runCmd,
             ]);
-
-            const timeout = setTimeout(() => {
-                if (dockerProcess) {
-                    dockerProcess.kill('SIGKILL');
-                    socket.emit("output", "\r\nProcess timed out after 10 seconds.");
-                }
-            }, 10000);
+            
+            resetTimeout();
 
             dockerProcess.stdout.on("data", (data) => {
                 socket.emit("output", data.toString());
@@ -121,6 +125,7 @@ const socketHandler = (io) => {
         socket.on("input", (data) => {
             if (dockerProcess) {
                 dockerProcess.stdin.write(data);
+                resetTimeout();
             }
         });
 
