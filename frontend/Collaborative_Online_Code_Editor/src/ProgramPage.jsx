@@ -51,32 +51,31 @@ function ProgramPage() {
         }
 
         socketRef.current = io(import.meta.env.VITE_SOCKET_URL);
-        //when backend sends output
-        socketRef.current.on("output",(data)=>{
-            // if(isFirstOutput.current)
-            // {
-            //     xtermRef.current?.clear();
-            //     isFirstOutput.current=false;
-            // }
+
+        // when backend sends output (PTY handles all echo now — just write it)
+        socketRef.current.on("output", (data) => {
             xtermRef.current?.write(data);
         })
-        socketRef.current.on("exit",(code)=>{
+
+        socketRef.current.on("exit", (code) => {
             xtermRef.current?.writeln(`\r\nProcess exited with code ${code}`)
         })
-        socketRef.current.on("connect",()=>{
+
+        socketRef.current.on("connect", () => {
             xtermRef.current?.writeln("connected to server");
         })
-        socketRef.current.on("disconnect",()=>{
+
+        socketRef.current.on("disconnect", () => {
             xtermRef.current?.writeln("Disconnected from server")
         })
-        //  When user types in terminal → send to backend via WebSocket
+
+        // When user types → just forward raw keystrokes to backend PTY.
+        // No local echo — the PTY echoes everything back through "output".
         xtermRef.current.onData((data) => {
-            xtermRef.current?.write(data);
-            socketRef.current?.emit("input",data);
+            socketRef.current?.emit("input", data);
         });
 
-
-        // 10. Cleanup when component unmounts
+        // Cleanup when component unmounts
         return () => {
             window.removeEventListener("resize", handleResize);
             resizeObserver.disconnect();
@@ -86,17 +85,14 @@ function ProgramPage() {
     }, []);
 
     const executeProgram = () => {
-        
         if (!xtermRef.current || !socketRef.current) return;
-        // Clear terminal and show status
         xtermRef.current.clear();
         xtermRef.current.writeln(`Running ${language} program...`);
-        //isFirstOutput.current=true;
-        // Send code to backend via socket io
-        socketRef.current.emit("run",{
+        socketRef.current.emit("run", {
             language,
             code,
         });
+        xtermRef.current.focus();
     };
 
     return (
@@ -145,7 +141,7 @@ function ProgramPage() {
                         </div>
                     </div>
                     <div className="outputContent">
-                        <div ref={terminalDivRef} style={{ height: "100%", width: "100%", minHeight: "260px" }} />
+                        <div ref={terminalDivRef} onClick={() => xtermRef.current?.focus()} style={{ height: "100%", width: "100%", minHeight: "260px" }} />
                     </div>
                 </aside>
             </div>
