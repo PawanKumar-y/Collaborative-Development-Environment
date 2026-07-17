@@ -1,4 +1,4 @@
-const { spawn } = require('child_process');
+const pty = require('node-pty');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -9,18 +9,20 @@ const socketHandler = (io) => {
     io.on("connection", (socket) => {
         console.log("Client connected:", socket.id);
 
-        let dockerProcess = null;
+        let ptyProcess = null;
         let currentTempDir = null;
         let timeout;
-        const resetTimeout=()=>{
+
+        const resetTimeout = () => {
             clearTimeout(timeout);
             timeout = setTimeout(() => {
-                if (dockerProcess) {
-                    dockerProcess.kill('SIGKILL');
+                if (ptyProcess) {
+                    ptyProcess.kill();
                     socket.emit("output", "\r\nProcess timed out after 10 seconds.");
-            }
+                }
             }, 10000);
-        }
+        };
+
         const cleanupTempDir = () => {
             if (currentTempDir) {
                 fs.rmSync(currentTempDir, { recursive: true, force: true });
@@ -29,9 +31,9 @@ const socketHandler = (io) => {
         };
 
         socket.on("run", async ({ language, code }) => {
-            if (dockerProcess) {
-                dockerProcess.kill();
-                dockerProcess = null;
+            if (ptyProcess) {
+                ptyProcess.kill();
+                ptyProcess = null;
             }
             cleanupTempDir();
 
@@ -48,9 +50,10 @@ const socketHandler = (io) => {
 
             fs.writeFileSync(path.join(tempDir, config.filename), code, 'utf-8');
 
-            // Compile first if needed (cpp/c/java)
+            // Compile first if needed (cpp/c/java) — keep this non-PTY, it's non-interactive
             if (config.compileCmd) {
                 const compileOk = await new Promise((resolve) => {
+                    const { spawn } = require('child_process');
                     const compileProc = spawn("docker", [
                         "run", "--rm",
                         "--network", "none",
@@ -84,54 +87,55 @@ const socketHandler = (io) => {
                 }
             }
 
-            dockerProcess = spawn("docker", [
-                "run", "--rm", "-i",
+            // Spawn with a real PTY — note -t added for TTY allocation
+            ptyProcess = pty.spawn("docker", [
+                "run", "--rm", "-it",
                 "--network", "none",
                 "--memory", config.memory || "100m",
                 "--cpus", "0.5",
-                "--ulimit", "cpu=10",
                 "--pids-limit", String(config.pidsLimit || 64),
                 "-v", `${tempDir}:/box`,
                 "-w", "/box",
                 config.image,
                 ...config.runCmd,
-            ]);
-            
+            ], {
+                name: 'xterm-color',
+                cols: 80,
+                rows: 24,
+                cwd: tempDir,
+                env: process.env,
+            });
+
             resetTimeout();
 
-            dockerProcess.stdout.on("data", (data) => {
-                socket.emit("output", data.toString());
+            ptyProcess.onData((data) => {
+                socket.emit("output", data);
             });
 
-            dockerProcess.stderr.on("data", (data) => {
-                socket.emit("output", data.toString());
-            });
-
-            dockerProcess.on("close", (exitCode) => {
+            ptyProcess.onExit(({ exitCode }) => {
                 clearTimeout(timeout);
                 socket.emit("exit", exitCode);
-                dockerProcess = null;
-                cleanupTempDir();
-            });
-
-            dockerProcess.on("error", (err) => {
-                clearTimeout(timeout);
-                socket.emit("output", `\r\nDocker error: ${err.message}`);
-                dockerProcess = null;
+                ptyProcess = null;
                 cleanupTempDir();
             });
         });
 
         socket.on("input", (data) => {
-            if (dockerProcess) {
-                dockerProcess.stdin.write(data);
+            if (ptyProcess) {
+                ptyProcess.write(data);
                 resetTimeout();
+            }
+        });
+
+        socket.on("resize", ({ cols, rows }) => {
+            if (ptyProcess) {
+                ptyProcess.resize(cols, rows);
             }
         });
 
         socket.on("disconnect", () => {
             console.log("Client disconnected:", socket.id);
-            if (dockerProcess) dockerProcess.kill('SIGKILL');
+            if (ptyProcess) ptyProcess.kill();
             cleanupTempDir();
         });
     });
