@@ -71,7 +71,6 @@ function ProgramPage() {
         })
         //  When user types in terminal → send to backend via WebSocket
         xtermRef.current.onData((data) => {
-            xtermRef.current?.write(data); 
             socketRef.current?.emit("input",data);
         });
 
