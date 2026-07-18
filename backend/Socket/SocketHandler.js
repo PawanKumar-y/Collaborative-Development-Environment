@@ -25,8 +25,13 @@ const socketHandler = (io) => {
 
         const cleanupTempDir = () => {
             if (currentTempDir) {
-                fs.rmSync(currentTempDir, { recursive: true, force: true });
+                const dirToRemove = currentTempDir;
                 currentTempDir = null;
+                fs.rm(dirToRemove, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }, (err) => {
+                    if (err) {
+                        console.error("Failed to clean up temp dir:", dirToRemove, err.message);
+                    }
+                });
             }
         };
 
@@ -89,7 +94,7 @@ const socketHandler = (io) => {
 
             // Spawn with a real PTY — note -t added for TTY allocation
             ptyProcess = pty.spawn("docker", [
-                "run", "--rm", "-it",
+                "run", "--rm", "-i",
                 "--network", "none",
                 "--memory", config.memory || "100m",
                 "--cpus", "0.5",

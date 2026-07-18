@@ -126,7 +126,6 @@ function RoomEditor() {
         })
 
         xtermRef.current.onData((data) => {
-            xtermRef.current?.write(data);
             socketRef.current?.emit("input", data);
         });
 
